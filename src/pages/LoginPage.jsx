@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { loginUser, loginWithGoogle, registerUser } from '../services/authService'
+import { loginUser, loginWithGoogle, registerUser, getSignInMethodsForEmail } from '../services/authService'
 import toast from 'react-hot-toast'
 
 const GoogleIcon = () => (
@@ -25,6 +25,18 @@ export default function LoginPage() {
     try {
       if (mode === 'register') {
         if (!displayName) { toast.error('Introduce tu nombre'); setLoading(false); return }
+        // comprobar si el email ya tiene métodos de acceso (auth) antes de crear
+        try {
+          const methods = await getSignInMethodsForEmail(email)
+          if (methods && methods.length > 0) {
+            const hint = methods.includes('google.com') ? 'Este email está registrado con Google. Inicia sesión con Google o vincula la cuenta.' : 'Email ya registrado'
+            toast.error(hint)
+            setLoading(false)
+            return
+          }
+        } catch (e) {
+          // si la comprobación falla dejamos que createUser maneje el error
+        }
         await registerUser(email, password, displayName)
         toast.success('¡Cuenta creada! 🎉')
       } else {

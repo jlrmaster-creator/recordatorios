@@ -5,7 +5,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile,
-  onAuthStateChanged
+  onAuthStateChanged,
+  fetchSignInMethodsForEmail
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from './firebase'
@@ -17,6 +18,10 @@ export const registerUser = async (email, password, displayName) => {
   await updateProfile(cred.user, { displayName })
   await createUserProfile(cred.user, { displayName })
   return cred.user
+}
+
+export const getSignInMethodsForEmail = async (email) => {
+  return await fetchSignInMethodsForEmail(auth, email)
 }
 
 export const loginUser = async (email, password) => {

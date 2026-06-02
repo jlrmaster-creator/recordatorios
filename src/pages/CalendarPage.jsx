@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { subscribeToMyReminders } from '../services/remindersService'
+import { subscribeToMyReminders, subscribeToMySentShares } from '../services/remindersService'
 import CalendarView from '../components/calendar/CalendarView'
 import ReminderCard from '../components/reminders/ReminderCard'
 import ReminderForm from '../components/reminders/ReminderForm'
@@ -14,13 +14,16 @@ import { isToday } from 'date-fns'
 export default function CalendarPage() {
   const { user } = useAuth()
   const [reminders, setReminders] = useState([])
+  const [sentShares, setSentShares] = useState([])
   const [selectedDay, setSelectedDay] = useState(new Date())
   const [editTarget, setEditTarget] = useState(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!user) return
-    return subscribeToMyReminders(user.uid, setReminders)
+    const unsub = subscribeToMyReminders(user.uid, setReminders)
+    const unsub2 = subscribeToMySentShares(user.uid, setSentShares)
+    return () => { unsub(); unsub2() }
   }, [user])
 
   const dayReminders = reminders.filter(r => isSameDayAs(r.dateTime, selectedDay))
@@ -72,6 +75,7 @@ export default function CalendarPage() {
                     onEdit={setEditTarget}
                     onDelete={handleDelete}
                     showShareBtn={false}
+                    sentShares={sentShares.filter(s => s.originalReminderId === r.id)}
                   />
                 ))}
               </div>

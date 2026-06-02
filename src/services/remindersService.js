@@ -118,20 +118,26 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
   return sharedRef.id
 }
 
-export const acceptSharedReminder = async (reminderId, sharedRecordId) => {
+export const acceptSharedReminder = async (reminderId) => {
   await updateDoc(doc(db, 'reminders', reminderId), {
     status: 'accepted',
     updatedAt: serverTimestamp()
   })
-  if (sharedRecordId) {
-    await updateDoc(doc(db, 'sharedReminders', sharedRecordId), { status: 'accepted' })
+  
+  const q = query(collection(db, 'sharedReminders'), where('reminderId', '==', reminderId))
+  const snap = await getDocs(q)
+  if (!snap.empty) {
+    await updateDoc(doc(db, 'sharedReminders', snap.docs[0].id), { status: 'accepted' })
   }
 }
 
-export const rejectSharedReminder = async (reminderId, sharedRecordId) => {
+export const rejectSharedReminder = async (reminderId) => {
   await deleteDoc(doc(db, 'reminders', reminderId))
-  if (sharedRecordId) {
-    await updateDoc(doc(db, 'sharedReminders', sharedRecordId), { status: 'rejected' })
+  
+  const q = query(collection(db, 'sharedReminders'), where('reminderId', '==', reminderId))
+  const snap = await getDocs(q)
+  if (!snap.empty) {
+    await updateDoc(doc(db, 'sharedReminders', snap.docs[0].id), { status: 'rejected' })
   }
 }
 

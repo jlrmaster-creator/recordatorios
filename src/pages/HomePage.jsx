@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import {
   subscribeToMyReminders,
+  subscribeToMySentShares,
   createReminder, updateReminder, deleteReminder
 } from '../services/remindersService'
 import ReminderCard from '../components/reminders/ReminderCard'
@@ -27,6 +28,7 @@ const SearchIcon = () => (
 export default function HomePage() {
   const { user } = useAuth()
   const [reminders, setReminders] = useState([])
+  const [sentShares, setSentShares] = useState([])
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [shareTarget, setShareTarget] = useState(null)
@@ -38,7 +40,8 @@ export default function HomePage() {
   useEffect(() => {
     if (!user) return
     const unsub = subscribeToMyReminders(user.uid, setReminders)
-    return unsub
+    const unsub2 = subscribeToMySentShares(user.uid, setSentShares)
+    return () => { unsub(); unsub2() }
   }, [user])
 
   const handleCreate = async (data) => {
@@ -142,6 +145,7 @@ export default function HomePage() {
                     onDelete={handleDelete}
                     onShare={setShareTarget}
                     showShareBtn
+                    sentShares={sentShares.filter(s => s.originalReminderId === r.id)}
                   />
                 ))}
               </div>
@@ -160,6 +164,7 @@ export default function HomePage() {
                     onEdit={setEditTarget}
                     onDelete={handleDelete}
                     showShareBtn={false}
+                    sentShares={sentShares.filter(s => s.originalReminderId === r.id)}
                   />
                 ))}
               </div>

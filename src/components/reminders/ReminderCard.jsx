@@ -10,7 +10,7 @@ const ClockIcon = () => (
   </svg>
 )
 
-export default function ReminderCard({ reminder, onEdit, onDelete, onShare, showShareBtn }) {
+export default function ReminderCard({ reminder, onEdit, onDelete, onShare, showShareBtn, sentShares = [] }) {
   const [detailOpen, setDetailOpen] = useState(false)
   const cat = getCategoryById(reminder.category)
   const imp = getImportanceById(reminder.importance)
@@ -39,6 +39,23 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
               <div className="reminder-title truncate">{reminder.title}</div>
               {reminder.description && (
                 <div className="reminder-desc">{reminder.description}</div>
+              )}
+              {/* Sent shares status (for owners) */}
+              {!reminder.isShared && sentShares && sentShares.length > 0 && (
+                <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
+                  {(() => {
+                    const accepted = sentShares.filter(s => s.status === 'accepted').length
+                    const rejected = sentShares.filter(s => s.status === 'rejected').length
+                    const pending = sentShares.filter(s => s.status === 'pending').length
+                    return (
+                      <>
+                        {accepted > 0 && <span className="badge" style={{ background: 'rgba(6,214,160,0.08)', color: 'var(--teal)' }}>✓ {accepted}</span>}
+                        {rejected > 0 && <span className="badge" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--red)' }}>✗ {rejected}</span>}
+                        {pending > 0 && <span className="badge" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)' }}>⏳ {pending}</span>}
+                      </>
+                    )
+                  })()}
+                </div>
               )}
             </div>
             <span className={importanceBadgeClass(reminder.importance)} style={{ flexShrink: 0 }}>

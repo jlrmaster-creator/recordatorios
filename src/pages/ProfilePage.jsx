@@ -5,6 +5,7 @@ import { subscribeToMyReminders } from '../services/remindersService'
 import { subscribeToUserGroups } from '../services/groupsService'
 import Header from '../components/layout/Header'
 import toast from 'react-hot-toast'
+import pkg from '../../package.json'
 
 export default function ProfilePage() {
   const { user, profile } = useAuth()
@@ -95,11 +96,14 @@ export default function ProfilePage() {
           <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
             <div style={{ fontSize: '1.5rem', marginBottom: 8 }}>📋</div>
             <div style={{ fontWeight: 700, marginBottom: 4, background: 'linear-gradient(135deg, var(--violet-light), var(--teal))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              Recordatorios v1.0
+              Recordatorios v{pkg.version}
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               App de notas personales y grupales con sincronización en tiempo real
             </p>
+            <div style={{ marginTop: 8, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Created by: José López-Romero Moraleda
+            </div>
           </div>
 
           {/* Logout */}
