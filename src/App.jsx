@@ -11,6 +11,7 @@ import SharedPage from './pages/SharedPage'
 import GroupsPage from './pages/GroupsPage'
 import ProfilePage from './pages/ProfilePage'
 import BottomNav from './components/layout/BottomNav'
+import ReloadPrompt from './components/shared/ReloadPrompt'
 
 // Spinner for auth loading
 const LoadingScreen = () => (
@@ -69,6 +70,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter basename={import.meta.env.BASE_URL}>
+        <ReloadPrompt />
         <AppShell />
         <Toaster
           position="top-center"
