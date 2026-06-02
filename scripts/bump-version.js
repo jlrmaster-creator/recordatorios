@@ -1,18 +1,31 @@
-const fs = require('fs')
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+
+const cwd = process.cwd();
+const pkgPath = path.join(cwd, 'package.json');
+
+console.log('Working directory:', cwd);
+console.log('Looking for package.json at:', pkgPath);
+
+if (!fs.existsSync(pkgPath)) {
+  console.error('Error: package.json not found at', pkgPath);
+  process.exit(1);
+}
 
 try {
-  const pkgPath = 'package.json'
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-  const ver = pkg.version || '1.0'
-  const parts = ver.split('.')
-  const major = parseInt(parts[0] || '1', 10)
-  const minor = parseInt(parts[1] || '0', 10)
-  const newMinor = minor + 1
-  const newVersion = `${major}.${newMinor}`
-  pkg.version = newVersion
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
-  console.log(`Bumped version: ${ver} -> ${newVersion}`)
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+  const oldVer = pkg.version || '1.0';
+  const parts = oldVer.split('.');
+  const major = parseInt(parts[0], 10) || 1;
+  const minor = parseInt(parts[1], 10) || 0;
+  const newVersion = `${major}.${minor + 1}`;
+  
+  pkg.version = newVersion;
+  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+  console.log(`✓ Bumped version: ${oldVer} -> ${newVersion}`);
 } catch (err) {
-  console.error('Error bumping version:', err.message)
-  process.exit(1)
+  console.error('Error:', err.message);
+  process.exit(1);
 }

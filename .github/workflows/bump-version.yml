@@ -21,20 +21,17 @@ jobs:
           node-version: '24'
 
       - name: Bump version
-        run: |
-          cd $GITHUB_WORKSPACE
-          node ./scripts/bump-version.js
+        working-directory: ${{ github.workspace }}
+        run: node scripts/bump-version.js
 
       - name: Commit and push version bump
+        working-directory: ${{ github.workspace }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add package.json
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: bump version [skip ci]"
-            git push
-          fi
+          git status
+          git commit -m "chore: bump version [skip ci]" || echo "No changes to commit"
+          git push origin main || echo "Nothing to push"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
