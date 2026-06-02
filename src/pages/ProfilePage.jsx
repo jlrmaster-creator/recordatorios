@@ -20,7 +20,6 @@ export default function ProfilePage() {
   }, [user])
 
   const handleLogout = async () => {
-    if (!window.confirm('¿Cerrar sesión?')) return
     try { await logoutUser() }
     catch { toast.error('Error al cerrar sesión') }
   }
