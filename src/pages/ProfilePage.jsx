@@ -21,6 +21,11 @@ export default function ProfilePage() {
   const sharedCount = useMemo(() => reminders.filter(r => r.isShared && r.status === 'accepted').length, [reminders])
   const highCount = useMemo(() => reminders.filter(r => r.importance === 'high' && !r.isShared).length, [reminders])
 
+  const handleLogout = async () => {
+    try { await logoutUser() }
+    catch { toast.error('Error al cerrar sesión') }
+  }
+
   const initials = (profile?.displayName || user?.displayName || 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 

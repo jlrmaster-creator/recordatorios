@@ -8,7 +8,6 @@ import { getCategoryById, importanceBadgeClass, getImportanceById } from '../uti
 import toast from 'react-hot-toast'
 
 export default function SharedPage() {
-  const { user } = useAuth()
   const { reminders } = useReminders()
 
   const pending = useMemo(() => reminders.filter(r => r.isShared && r.status === 'pending'), [reminders])
