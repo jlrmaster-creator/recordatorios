@@ -1,31 +1,49 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { join } from 'path'
+import { cwd } from 'process'
 
-const cwd = process.cwd();
-const pkgPath = path.join(cwd, 'package.json');
+const pkgPath = join(cwd(), 'package.json')
 
-console.log('Working directory:', cwd);
-console.log('Looking for package.json at:', pkgPath);
-
-if (!fs.existsSync(pkgPath)) {
-  console.error('Error: package.json not found at', pkgPath);
-  process.exit(1);
+if (!existsSync(pkgPath)) {
+  console.error('Error: package.json not found at', pkgPath)
+  process.exit(1)
 }
 
+const part = process.argv[2] || 'patch'
+
 try {
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  const oldVer = pkg.version || '1.0';
-  const parts = oldVer.split('.');
-  const major = parseInt(parts[0], 10) || 1;
-  const minor = parseInt(parts[1], 10) || 0;
-  const newVersion = `${major}.${minor + 1}`;
-  
-  pkg.version = newVersion;
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-  console.log(`✓ Bumped version: ${oldVer} -> ${newVersion}`);
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
+  const oldVer = pkg.version || '1.0.0'
+  const parts = oldVer.split('.')
+
+  // Normalize to semver (major.minor.patch)
+  let major = parseInt(parts[0], 10) || 1
+  let minor = parseInt(parts[1], 10) || 0
+  let patch = parseInt(parts[2], 10) || 0
+
+  switch (part) {
+    case 'major':
+      major += 1
+      minor = 0
+      patch = 0
+      break
+    case 'minor':
+      minor += 1
+      patch = 0
+      break
+    case 'patch':
+    default:
+      patch += 1
+      break
+  }
+
+  const newVersion = `${major}.${minor}.${patch}`
+  pkg.version = newVersion
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+  console.log(`✓ Bumped version: ${oldVer} -> ${newVersion} (${part})`)
 } catch (err) {
-  console.error('Error:', err.message);
-  process.exit(1);
+  console.error('Error:', err.message)
+  process.exit(1)
 }
