@@ -36,24 +36,29 @@ async function showNotification(reminder, subtitle) {
     data: { clickAction: '/recordatorios/' }
   }
 
-  // Preferir ServiceWorker (funciona con pestaña en background)
+  // Preferir ServiceWorker (siempre en móviles, es obligatorio en Chrome Android)
   try {
     if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.getRegistration()
-      if (registration && registration.active) {
+      // Esperar al SW pero con timeout de 1 segundo para no colgarse en Dev mode
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise(resolve => setTimeout(() => resolve(null), 1000))
+      ])
+      
+      if (registration) {
         await registration.showNotification(title, options)
         return
       }
     }
   } catch (e) {
-    console.warn('SW showNotification falló, usando fallback:', e)
+    console.warn('SW showNotification falló:', e)
   }
 
-  // Fallback: Notification API directa
+  // Fallback: Notification API directa (Ojo: lanza error en Android Chrome)
   try {
-    new Notification(title, { body, icon: options.icon, tag: options.tag })
+    new Notification(title, { body: options.body, icon: options.icon, tag: options.tag })
   } catch (e) {
-    console.warn('Notification API falló:', e)
+    console.warn('Notification API directa falló (normal en móviles):', e)
   }
 }
 

@@ -26,30 +26,31 @@ self.addEventListener('message', (e) => {
 
 self.addEventListener('push', (e) => {
   if (!e.data) return
+  let title = 'Recordatorio'
+  let body = 'Tienes un nuevo aviso'
+  let icon = '/recordatorios/icon-192x192.png'
+
   try {
     const data = e.data.json()
-    const title = data.notification?.title || data.title || 'Recordatorios'
-    const body = data.notification?.body || data.body || ''
-    const icon = data.notification?.icon || data.icon || '/recordatorios/icon-192x192.png'
-    const image = data.notification?.image || data.image
-    const clickAction = data.notification?.click_action || data.data?.clickAction || '/'
+    // FCM Web Push format or generic JSON format
+    title = data.notification?.title || data.title || title
+    body = data.notification?.body || data.body || JSON.stringify(data).substring(0, 50)
+    icon = data.notification?.icon || data.icon || icon
+  } catch (err) {
+    // If it's not JSON, it might be raw text
+    body = e.data.text() || 'Cuerpo del mensaje ilegible'
+  }
 
+  e.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
-      image,
       badge: '/recordatorios/icon-192x192.png',
-      data: { clickAction },
       vibrate: [200, 100, 200],
-      requireInteraction: true
+      requireInteraction: true,
+      data: { clickAction: '/recordatorios/' }
     })
-  } catch {
-    self.registration.showNotification('Recordatorios', {
-      body: e.data.text(),
-      icon: '/recordatorios/icon-192x192.png',
-      badge: '/recordatorios/icon-192x192.png'
-    })
-  }
+  )
 })
 
 self.addEventListener('notificationclick', (e) => {
