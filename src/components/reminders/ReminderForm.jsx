@@ -56,14 +56,18 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
     const err = validate()
     if (Object.keys(err).length) { setErrors(err); return }
     
-    // Pedir permiso de notificaciones explícitamente tras interacción del usuario
-    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-      try { 
-        const perm = await Notification.requestPermission() 
-        if (perm === 'granted' && user) {
-          ensureFCMToken(user.uid)
-        }
-      } catch {}
+    // Manejar permisos de notificaciones
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        if (user) ensureFCMToken(user.uid)
+      } else if (Notification.permission !== 'denied') {
+        try { 
+          const perm = await Notification.requestPermission() 
+          if (perm === 'granted' && user) {
+            ensureFCMToken(user.uid)
+          }
+        } catch {}
+      }
     }
 
     const dateObj = new Date(form.dateTime)
