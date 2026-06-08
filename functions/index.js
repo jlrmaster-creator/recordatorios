@@ -84,22 +84,36 @@ exports.checkUpcomingReminders = onSchedule('every 15 minutes', async () => {
   const snap = await db.collection('reminders')
     .where('dateTime', '>=', now)
     .where('dateTime', '<=', inOneHour)
-    .where('status', 'in', ['own', 'accepted'])
     .get()
 
-  const sent = new Set()
+  const byUser = {}
 
   for (const doc of snap.docs) {
     const reminder = doc.data()
     const uid = reminder.ownerId
-    if (!uid || sent.has(uid)) continue
+    if (!uid) continue
 
-    sent.add(uid)
-    await sendPush(
-      uid,
-      'Recordatorio próximo',
-      `"${reminder.title}" está por vencer`,
-      '/recordatorios/'
-    )
+    if (reminder.lastNotifiedAt) {
+      const diff = now.seconds - (reminder.lastNotifiedAt.seconds || 0)
+      if (diff < 3600) continue
+    }
+
+    if (!byUser[uid]) byUser[uid] = { reminders: [], refs: [] }
+    byUser[uid].reminders.push(reminder)
+    byUser[uid].refs.push(doc.ref)
+  }
+
+  for (const [uid, { reminders, refs }] of Object.entries(byUser)) {
+    const batch = db.batch()
+    for (const ref of refs) batch.update(ref, { lastNotifiedAt: now })
+    await batch.commit()
+
+    const count = reminders.length
+    const title = reminders[0].title
+    const body = count === 1
+      ? `"${title}" está por vencer`
+      : `Tienes ${count} recordatorios próximos (ej: "${title}")`
+
+    await sendPush(uid, 'Recordatorio próximo', body, '/recordatorios/')
   }
 })
