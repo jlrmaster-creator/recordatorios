@@ -11,9 +11,10 @@ admin.initializeApp({ credential: admin.credential.cert(JSON.parse(sa)) })
 const db = admin.firestore()
 const now = admin.firestore.Timestamp.now()
 const inOneHour = new admin.firestore.Timestamp(now.seconds + 3600, now.nanoseconds)
+const oneHourAgo = new admin.firestore.Timestamp(now.seconds - 3600, now.nanoseconds)
 
 const snap = await db.collection('reminders')
-  .where('dateTime', '>=', now)
+  .where('dateTime', '>=', oneHourAgo)
   .where('dateTime', '<=', inOneHour)
   .get()
 
