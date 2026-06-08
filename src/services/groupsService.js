@@ -1,7 +1,7 @@
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
+  collection, doc, addDoc, updateDoc, setDoc,
   query, where, onSnapshot, serverTimestamp,
-  getDoc, getDocs, arrayUnion, arrayRemove, writeBatch
+  getDoc, arrayUnion, arrayRemove, writeBatch
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -19,6 +19,11 @@ export const createGroup = async (userId, name, description = '') => {
     inviteCode,
     createdAt: serverTimestamp()
   })
+  // Create invite code lookup document
+  await setDoc(doc(db, 'inviteCodes', inviteCode), {
+    groupId: ref.id,
+    createdAt: serverTimestamp()
+  })
   // Add group to user's profile
   await updateDoc(doc(db, 'users', userId), {
     groups: arrayUnion(ref.id)
@@ -28,20 +33,24 @@ export const createGroup = async (userId, name, description = '') => {
 
 // ── JOIN GROUP ───────────────────────────────────────────
 export const joinGroupByCode = async (userId, code) => {
-  const q = query(collection(db, 'groups'), where('inviteCode', '==', code.toUpperCase()))
-  const snap = await getDocs(q)
-  if (snap.empty) throw new Error('Código de grupo no encontrado')
-  const groupDoc = snap.docs[0]
-  const groupData = groupDoc.data()
+  const codeUpper = code.toUpperCase()
+  const inviteSnap = await getDoc(doc(db, 'inviteCodes', codeUpper))
+  if (!inviteSnap.exists()) throw new Error('Código de grupo no encontrado')
+
+  const groupId = inviteSnap.data().groupId
+  const groupSnap = await getDoc(doc(db, 'groups', groupId))
+  if (!groupSnap.exists()) throw new Error('El grupo ya no existe')
+
+  const groupData = groupSnap.data()
   if (groupData.members.includes(userId)) throw new Error('Ya eres miembro de este grupo')
 
-  await updateDoc(doc(db, 'groups', groupDoc.id), {
+  await updateDoc(doc(db, 'groups', groupId), {
     members: arrayUnion(userId)
   })
   await updateDoc(doc(db, 'users', userId), {
-    groups: arrayUnion(groupDoc.id)
+    groups: arrayUnion(groupId)
   })
-  return { id: groupDoc.id, ...groupData }
+  return { id: groupId, ...groupData }
 }
 
 // ── LEAVE GROUP ──────────────────────────────────────────
@@ -85,13 +94,18 @@ export const getGroupById = async (groupId) => {
 }
 
 // ── DELETE GROUP ─────────────────────────────────────────
-export const deleteGroup = async (groupId, memberIds) => {
+export const deleteGroup = async (groupId) => {
+  const groupSnap = await getDoc(doc(db, 'groups', groupId))
+  if (!groupSnap.exists()) return
+  const { members, inviteCode } = groupSnap.data()
+
   const batch = writeBatch(db)
   // Remove group from all members
-  memberIds.forEach(uid => {
+  members.forEach(uid => {
     const userRef = doc(db, 'users', uid)
     batch.update(userRef, { groups: arrayRemove(groupId) })
   })
   batch.delete(doc(db, 'groups', groupId))
+  batch.delete(doc(db, 'inviteCodes', inviteCode))
   await batch.commit()
 }
