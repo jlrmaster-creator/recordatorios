@@ -8,6 +8,14 @@ export const requestNotificationPermission = async () => {
   return permission
 }
 
+export const ensureFCMToken = async (userId) => {
+  if (!messaging || !userId) return
+  const token = await getFCMToken()
+  if (token) {
+    await saveTokenToFirestore(userId, token)
+  }
+}
+
 export const getFCMToken = async () => {
   if (!messaging) return null
   const permission = await requestNotificationPermission()

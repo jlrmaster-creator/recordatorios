@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { COLORS, CATEGORIES, IMPORTANCE } from '../../utils/colorUtils'
 import { toInputDateTime } from '../../utils/dateUtils'
 import { Timestamp } from 'firebase/firestore'
+import { useAuth } from '../../context/AuthContext'
+import { ensureFCMToken } from '../../services/notificationService'
 
 const defaultForm = {
   title: '',
@@ -13,6 +15,7 @@ const defaultForm = {
 }
 
 export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
+  const { user } = useAuth()
   const [form, setForm] = useState(defaultForm)
   const [errors, setErrors] = useState({})
 
@@ -55,7 +58,12 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
     
     // Pedir permiso de notificaciones explícitamente tras interacción del usuario
     if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-      try { await Notification.requestPermission() } catch {}
+      try { 
+        const perm = await Notification.requestPermission() 
+        if (perm === 'granted' && user) {
+          ensureFCMToken(user.uid)
+        }
+      } catch {}
     }
 
     const dateObj = new Date(form.dateTime)
