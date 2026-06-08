@@ -1,11 +1,13 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useReminders } from '../../context/RemindersContext'
 import { formatDate, formatTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
 import { EditIcon, DeleteIcon, ShareIcon } from '../shared/Icons'
+import Modal from '../shared/Modal'
 
 export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, onClose }) {
   const { sentShares } = useReminders()
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const shares = useMemo(() =>
     !reminder.isShared
       ? sentShares.filter(s => s.originalReminderId === reminder.id)
@@ -17,9 +19,7 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
   const overdue = isOverdue(reminder.dateTime)
   const color = reminder.color || '#7C3AED'
 
-  const handleDelete = () => {
-    if (window.confirm('¿Eliminar este recordatorio?')) onDelete()
-  }
+  const handleDelete = () => setConfirmOpen(true)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -121,6 +121,20 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
           <DeleteIcon /> Eliminar
         </button>
       </div>
+
+      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Eliminar recordatorio">
+        <p style={{ marginBottom: 20, color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+          ¿Estás seguro de que quieres eliminar "<strong>{reminder.title}</strong>"?
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setConfirmOpen(false)}>
+            Cancelar
+          </button>
+          <button className="btn btn-danger" style={{ flex: 1 }} onClick={() => { setConfirmOpen(false); onDelete() }}>
+            Eliminar
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
