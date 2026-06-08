@@ -15,5 +15,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
-export const messaging = getMessaging(app)
+
+// messaging puede fallar en navegadores sin soporte (Safari antiguo, Firefox privado, etc.)
+let _messaging = null
+try {
+  _messaging = getMessaging(app)
+} catch (err) {
+  console.warn('Firebase Messaging no soportado en este navegador:', err.message)
+}
+export const messaging = _messaging
 export default app

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthChange, getUserProfile } from '../services/authService'
-import { getFCMToken, saveTokenToFirestore, removeTokenFromFirestore, unregisterFCMToken } from '../services/notificationService'
+import { getFCMToken, saveTokenToFirestore, removeTokenFromFirestore, unregisterFCMToken, listenForForegroundMessages } from '../services/notificationService'
+import toast from 'react-hot-toast'
 
 const AuthContext = createContext(null)
 
@@ -10,22 +11,45 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let fgUnsub = null
+
     const unsub = onAuthChange(async (firebaseUser) => {
       setUser(firebaseUser)
       if (firebaseUser) {
         const prof = await getUserProfile(firebaseUser.uid)
         setProfile(prof)
-        const token = await getFCMToken()
-        if (token) await saveTokenToFirestore(firebaseUser.uid, token)
+
+        // Registrar token FCM (no bloquea si falla)
+        try {
+          const token = await getFCMToken()
+          if (token) await saveTokenToFirestore(firebaseUser.uid, token)
+        } catch (err) {
+          console.warn('Error registrando FCM token:', err)
+        }
+
+        // Escuchar push notifications en primer plano
+        fgUnsub = listenForForegroundMessages((payload) => {
+          const title = payload?.notification?.title || payload?.data?.title || 'Recordatorio'
+          const body = payload?.notification?.body || payload?.data?.body || ''
+          toast(body ? `${title}: ${body}` : title, {
+            icon: '🔔',
+            duration: 6000
+          })
+        })
       } else {
         if (user) {
-          await removeTokenFromFirestore(user.uid)
+          try { await removeTokenFromFirestore(user.uid) } catch {}
         }
-        await unregisterFCMToken()
+        try { await unregisterFCMToken() } catch {}
+        if (fgUnsub) { fgUnsub(); fgUnsub = null }
       }
       setLoading(false)
     })
-    return unsub
+
+    return () => {
+      unsub()
+      if (fgUnsub) fgUnsub()
+    }
   }, [])
 
   const refreshProfile = async () => {
@@ -47,3 +71,4 @@ export const useAuth = () => {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider')
   return ctx
 }
+

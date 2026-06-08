@@ -8,6 +8,20 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html')))
 
 self.addEventListener('message', (e) => {
   if (e.data && 'SKIP_WAITING' === e.data.type) self.skipWaiting()
+
+  // Soporte para notificaciones locales enviadas desde la app
+  if (e.data && e.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, tag } = e.data
+    self.registration.showNotification(title || 'Recordatorio', {
+      body: body || '',
+      icon: '/recordatorios/icon-192x192.png',
+      badge: '/recordatorios/icon-192x192.png',
+      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      tag: tag || 'local-reminder',
+      data: { clickAction: '/recordatorios/' }
+    })
+  }
 })
 
 self.addEventListener('push', (e) => {
@@ -42,3 +56,4 @@ self.addEventListener('notificationclick', (e) => {
     if (clients.openWindow) return clients.openWindow(url)
   }))
 })
+

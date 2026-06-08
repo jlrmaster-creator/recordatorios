@@ -9,6 +9,7 @@ export const requestNotificationPermission = async () => {
 }
 
 export const getFCMToken = async () => {
+  if (!messaging) return null
   const permission = await requestNotificationPermission()
   if (permission !== 'granted') return null
 
@@ -47,6 +48,7 @@ export const removeTokenFromFirestore = async (userId) => {
 }
 
 export const unregisterFCMToken = async () => {
+  if (!messaging) return
   try {
     await fbDeleteToken(messaging)
   } catch (err) {
@@ -57,6 +59,7 @@ export const unregisterFCMToken = async () => {
 let onMessageUnsub = null
 
 export const listenForForegroundMessages = (callback) => {
+  if (!messaging) return () => {}
   if (onMessageUnsub) onMessageUnsub()
   onMessageUnsub = onMessage(messaging, (payload) => {
     callback(payload)
@@ -68,3 +71,4 @@ export const listenForForegroundMessages = (callback) => {
     }
   }
 }
+
