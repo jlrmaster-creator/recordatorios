@@ -9,13 +9,8 @@ import Header from '../components/layout/Header'
 import Modal from '../components/shared/Modal'
 import GroupForm from '../components/groups/GroupForm'
 import MemberList from '../components/groups/MemberList'
+import { PlusIcon } from '../components/shared/Icons'
 import toast from 'react-hot-toast'
-
-const PlusIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-)
 
 export default function GroupsPage() {
   const { user, profile } = useAuth()

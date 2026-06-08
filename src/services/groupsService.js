@@ -72,7 +72,7 @@ export const subscribeToUserGroups = (userId, callback) => {
   return onSnapshot(q, (snap) => {
     const groups = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     callback(groups)
-  })
+  }, console.error)
 }
 
 // ── GET GROUP MEMBERS ────────────────────────────────────

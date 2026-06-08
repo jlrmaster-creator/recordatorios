@@ -10,20 +10,9 @@ import ReminderForm from '../components/reminders/ReminderForm'
 import Modal from '../components/shared/Modal'
 import Header from '../components/layout/Header'
 import ShareModal from '../components/reminders/ShareModal'
+import { PlusIcon, SearchIcon } from '../components/shared/Icons'
 import toast from 'react-hot-toast'
 import { CATEGORIES, IMPORTANCE } from '../utils/colorUtils'
-
-const PlusIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-)
-
-const SearchIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-  </svg>
-)
 
 export default function HomePage() {
   const { user } = useAuth()

@@ -1,14 +1,9 @@
 import { useState } from 'react'
 import { formatDateTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
+import { ClockIcon } from '../shared/Icons'
 import Modal from '../shared/Modal'
 import ReminderDetail from './ReminderDetail'
-
-const ClockIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-  </svg>
-)
 
 export default function ReminderCard({ reminder, onEdit, onDelete, onShare, showShareBtn, sentShares = [] }) {
   const [detailOpen, setDetailOpen] = useState(false)

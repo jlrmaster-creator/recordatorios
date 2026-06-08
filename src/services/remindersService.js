@@ -1,7 +1,7 @@
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, onSnapshot, serverTimestamp,
-  getDoc, getDocs, writeBatch, arrayUnion
+  getDoc, getDocs, writeBatch
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -29,7 +29,7 @@ export const subscribeToMyReminders = (userId, callback) => {
   return onSnapshot(q, (snap) => {
     const reminders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     callback(reminders)
-  })
+  }, console.error)
 }
 
 // Escuchar los recordatorios que el usuario ha compartido con otros (para ver el estado)
@@ -41,19 +41,7 @@ export const subscribeToMySentShares = (userId, callback) => {
   return onSnapshot(q, snap => {
     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     callback(data)
-  })
-}
-
-export const subscribeToSharedReminders = (userId, callback) => {
-  const q = query(
-    collection(db, 'reminders'),
-    where('sharedWith', 'array-contains', userId),
-    orderBy('createdAt', 'desc')
-  )
-  return onSnapshot(q, (snap) => {
-    const reminders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    callback(reminders)
-  })
+  }, console.error)
 }
 
 // Pending shared reminders (not yet accepted)
@@ -67,7 +55,7 @@ export const subscribeToPendingShared = (userId, callback) => {
   return onSnapshot(q, (snap) => {
     const items = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     callback(items)
-  })
+  }, console.error)
 }
 
 // ── UPDATE ───────────────────────────────────────────────
