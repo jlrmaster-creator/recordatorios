@@ -38,10 +38,12 @@ async function showNotification(reminder, subtitle) {
 
   // Preferir ServiceWorker (funciona con pestaña en background)
   try {
-    const registration = await navigator.serviceWorker?.ready
-    if (registration) {
-      await registration.showNotification(title, options)
-      return
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration()
+      if (registration && registration.active) {
+        await registration.showNotification(title, options)
+        return
+      }
     }
   } catch (e) {
     console.warn('SW showNotification falló, usando fallback:', e)

@@ -48,10 +48,16 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
     return err
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const err = validate()
     if (Object.keys(err).length) { setErrors(err); return }
+    
+    // Pedir permiso de notificaciones explícitamente tras interacción del usuario
+    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      try { await Notification.requestPermission() } catch {}
+    }
+
     const dateObj = new Date(form.dateTime)
     onSubmit({ ...form, dateTime: Timestamp.fromDate(dateObj) })
   }
