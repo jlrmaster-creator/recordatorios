@@ -14,7 +14,8 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        globPatterns: ['**/*.{js,css,svg,png,webmanifest}'],
+        globIgnores: ['**/node_modules/**/*', 'index.html'],
       },
       manifest: {
         name: 'Recordatorios',
