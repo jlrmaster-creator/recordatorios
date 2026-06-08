@@ -17,7 +17,7 @@ const snap = await db.collection('reminders')
   .where('dateTime', '<=', inOneHour)
   .get()
 
-const byUser = {}
+let sent = 0
 
 for (const doc of snap.docs) {
   const reminder = doc.data()
@@ -29,32 +29,16 @@ for (const doc of snap.docs) {
     if (diff < 3600) continue
   }
 
-  if (!byUser[uid]) byUser[uid] = { reminders: [], refs: [] }
-  byUser[uid].reminders.push(reminder)
-  byUser[uid].refs.push(doc.ref)
-}
-
-let sent = 0
-
-for (const [uid, { reminders, refs }] of Object.entries(byUser)) {
   const userSnap = await db.collection('users').doc(uid).get()
   const token = userSnap.data()?.fcmToken
   if (!token) continue
 
-  const batch = db.batch()
-  for (const ref of refs) batch.update(ref, { lastNotifiedAt: now })
-  await batch.commit()
-
-  const count = reminders.length
-  const title = reminders[0].title
-  const body = count === 1
-    ? `"${title}" está por vencer`
-    : `Tienes ${count} recordatorios próximos (ej: "${title}")`
+  await doc.ref.update({ lastNotifiedAt: now })
 
   try {
     await admin.messaging().send({
       token,
-      notification: { title: 'Recordatorio próximo', body },
+      notification: { title: reminder.title, body: 'Está por vencer' },
       webpush: {
         notification: {
           icon: '/recordatorios/icon-192x192.png',
