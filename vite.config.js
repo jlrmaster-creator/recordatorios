@@ -11,7 +11,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'icon-192x192.png', 'icon-512x512.png'],
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: false,
+      },
       manifest: {
         name: 'Recordatorios',
         short_name: 'Recordatorios',

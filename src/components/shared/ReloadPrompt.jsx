@@ -8,8 +8,11 @@ export default function ReloadPrompt() {
     updateServiceWorker,
   } = useRegisterSW({
     onRegistered(r) {
-      // Check for updates every 60 minutes if the app is left open
-      r && setInterval(() => { r.update() }, 60 * 60 * 1000)
+      if (!r) return
+      const interval = setInterval(() => { r.update() }, 60 * 60 * 1000)
+      r.addEventListener('statechange', () => {
+        if (r.state === 'redundant') clearInterval(interval)
+      })
     },
     onRegisterError(error) {
       console.error('SW registration error', error)

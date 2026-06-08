@@ -11,6 +11,7 @@ import GroupsPage from './pages/GroupsPage'
 import ProfilePage from './pages/ProfilePage'
 import BottomNav from './components/layout/BottomNav'
 import ReloadPrompt from './components/shared/ReloadPrompt'
+import ErrorBoundary from './components/shared/ErrorBoundary'
 
 // Spinner for auth loading
 const LoadingScreen = () => (
@@ -61,9 +62,10 @@ export default function App() {
   return (
     <AuthProvider>
       <RemindersProvider>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <ReloadPrompt />
-          <AppShell />
+        <ErrorBoundary>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
+            <ReloadPrompt />
+            <AppShell />
           <Toaster
             position="top-center"
             toastOptions={{
@@ -87,6 +89,7 @@ export default function App() {
             }}
           />
         </BrowserRouter>
+        </ErrorBoundary>
       </RemindersProvider>
     </AuthProvider>
   )
