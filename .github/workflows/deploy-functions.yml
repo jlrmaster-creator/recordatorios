@@ -26,6 +26,6 @@ jobs:
       - name: Deploy to Firebase
         uses: w9jds/firebase-action@v13.22.0
         with:
-          args: deploy --only functions
+          args: deploy --only functions --project recordatorios-61c1e
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
