@@ -19,7 +19,8 @@ export const getFCMToken = async () => {
   }
 
   try {
-    const currentToken = await getToken(messaging, { vapidKey })
+    const registration = await navigator.serviceWorker.ready
+    const currentToken = await getToken(messaging, { vapidKey, serviceWorkerRegistration: registration })
     return currentToken
   } catch (err) {
     console.error('Error al obtener token FCM:', err)
