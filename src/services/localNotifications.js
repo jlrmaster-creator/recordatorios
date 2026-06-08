@@ -24,8 +24,8 @@ async function showNotification(reminder, subtitle) {
   const permission = Notification.permission
   if (permission !== 'granted') return
 
-  const title = reminder.title || 'Recordatorio'
-  const body = `${subtitle}${reminder.description ? ' — ' + reminder.description : ''}`
+  const title = `${subtitle} — ${reminder.title || 'Recordatorio'}`
+  const body = reminder.description || reminder.title || ''
   const options = {
     body,
     icon: '/recordatorios/icon-192x192.png',
