@@ -11,12 +11,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      workbox: {
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
-        navigateFallback: 'index.html',
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: false,
       },
       manifest: {
         name: 'Recordatorios',

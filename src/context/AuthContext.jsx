@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { onAuthChange } from '../services/authService'
-import { getUserProfile } from '../services/authService'
+import { onAuthChange, getUserProfile } from '../services/authService'
+import { getFCMToken, saveTokenToFirestore, removeTokenFromFirestore, unregisterFCMToken } from '../services/notificationService'
 
 const AuthContext = createContext(null)
 
@@ -15,8 +15,13 @@ export const AuthProvider = ({ children }) => {
       if (firebaseUser) {
         const prof = await getUserProfile(firebaseUser.uid)
         setProfile(prof)
+        const token = await getFCMToken()
+        if (token) await saveTokenToFirestore(firebaseUser.uid, token)
       } else {
-        setProfile(null)
+        if (user) {
+          await removeTokenFromFirestore(user.uid)
+        }
+        await unregisterFCMToken()
       }
       setLoading(false)
     })
