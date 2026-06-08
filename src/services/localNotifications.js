@@ -90,6 +90,10 @@ function getReminderTime(reminder) {
   }
 }
 
+// Set para recordar qué notificaciones ya han saltado y no repetirlas
+const notified = new Set()
+let isAppInitialized = false
+
 // ── Programar timers para todos los reminders ──────────────
 export function scheduleAll(reminders) {
   lastReminders = reminders
@@ -102,24 +106,41 @@ export function scheduleAll(reminders) {
     const targetTime = getReminderTime(reminder)
     if (!targetTime) continue
 
-    // Solo programar recordatorios futuros (o de los próximos segundos)
-    if (targetTime < now - 60000) continue
+    const exactKey = `exact-${reminder.id}`
+    const preKey = `pre-${reminder.id}`
+
+    // Si ya pasó hace más de 15 minutos, lo ignoramos por completo
+    if (targetTime < now - 15 * 60 * 1000) continue
 
     const timers = {}
     const fiveMinBefore = targetTime - FIVE_MIN
 
-    // Timer: 5 minutos antes
+    // ── Lógica de 5 minutos antes ──
     if (fiveMinBefore > now) {
       timers.pre = setTimeout(() => {
+        notified.add(preKey)
         showNotification(reminder, '⏰ En 5 minutos')
       }, fiveMinBefore - now)
+    } else if (fiveMinBefore > now - 5 * 60 * 1000 && isAppInitialized) {
+      // Si venció hace poco mientras el móvil dormía
+      if (!notified.has(preKey)) {
+        notified.add(preKey)
+        showNotification(reminder, '⏰ En 5 minutos')
+      }
     }
 
-    // Timer: hora exacta
+    // ── Lógica de Hora Exacta ──
     if (targetTime > now) {
       timers.exact = setTimeout(() => {
+        notified.add(exactKey)
         showNotification(reminder, '🔔 ¡Ahora!')
       }, targetTime - now)
+    } else if (targetTime > now - 15 * 60 * 1000 && isAppInitialized) {
+      // Si venció hace poco mientras el móvil dormía
+      if (!notified.has(exactKey)) {
+        notified.add(exactKey)
+        showNotification(reminder, '🔔 ¡Vencido recientemente!')
+      }
     }
 
     if (timers.pre !== undefined || timers.exact !== undefined) {
@@ -149,7 +170,6 @@ export function clearTimerFor(reminderId) {
 // ── Checker periódico (fallback) ───────────────────────────
 // Cada 30 segundos revisa si algún recordatorio está en la
 // ventana de ±30 seg de su hora programada y no fue notificado.
-const notified = new Set()
 
 function periodicCheck() {
   const now = Date.now()
