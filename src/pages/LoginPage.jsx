@@ -146,6 +146,10 @@ export default function LoginPage() {
             <>¿Ya tienes cuenta? <button onClick={() => setMode('login')}>Inicia sesión</button></>
           )}
         </div>
+        
+        <div style={{ textAlign: 'center', marginTop: 16, fontSize: '0.7rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
+          v{import.meta.env.VITE_APP_VERSION || '1.0.0'}
+        </div>
       </div>
     </div>
   )
