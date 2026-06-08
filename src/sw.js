@@ -28,12 +28,18 @@ self.addEventListener('push', (e) => {
   if (!e.data) return
   try {
     const data = e.data.json()
-    self.registration.showNotification(data.title || 'Recordatorios', {
-      body: data.body || '',
-      icon: data.icon || '/recordatorios/icon-192x192.png',
-      image: data.image,
+    const title = data.notification?.title || data.title || 'Recordatorios'
+    const body = data.notification?.body || data.body || ''
+    const icon = data.notification?.icon || data.icon || '/recordatorios/icon-192x192.png'
+    const image = data.notification?.image || data.image
+    const clickAction = data.notification?.click_action || data.data?.clickAction || '/'
+
+    self.registration.showNotification(title, {
+      body,
+      icon,
+      image,
       badge: '/recordatorios/icon-192x192.png',
-      data: { clickAction: data.clickAction || '/' },
+      data: { clickAction },
       vibrate: [200, 100, 200],
       requireInteraction: true
     })

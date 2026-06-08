@@ -36,9 +36,12 @@ for (const doc of snap.docs) {
   await doc.ref.update({ lastNotifiedAt: now })
 
   try {
+    const title = `⏰ Recordatorio: ${reminder.title || 'Pendiente'}`
+    const body = reminder.description || 'Está por vencer'
+    
     await admin.messaging().send({
       token,
-      notification: { title: reminder.title, body: 'Está por vencer' },
+      notification: { title, body },
       webpush: {
         notification: {
           icon: '/recordatorios/icon-192x192.png',
