@@ -11,6 +11,8 @@ const activeTimers = new Map() // reminderId -> { pre?, exact? }
 let checkerInterval = null
 let lastReminders = []
 
+import toast from 'react-hot-toast'
+
 // ── Permiso ────────────────────────────────────────────────
 export async function requestPermission() {
   if (!('Notification' in window)) return 'denied'
@@ -22,10 +24,18 @@ export async function requestPermission() {
 // ── Mostrar notificación ───────────────────────────────────
 async function showNotification(reminder, subtitle) {
   const permission = Notification.permission
-  if (permission !== 'granted') return
 
   const title = `${subtitle} — ${reminder.title || 'Recordatorio'}`
   const body = reminder.description || reminder.title || ''
+  
+  // Siempre mostrar un toast in-app como fallback/complemento visual
+  toast(`${title}\n${body}`, {
+    icon: '🔔',
+    duration: 6000,
+  })
+
+  if (permission !== 'granted') return
+
   const options = {
     body,
     icon: '/recordatorios/icon-192x192.png',
@@ -65,8 +75,19 @@ async function showNotification(reminder, subtitle) {
 // ── Obtener timestamp de un reminder ───────────────────────
 function getReminderTime(reminder) {
   if (!reminder.dateTime) return null
-  const dt = reminder.dateTime?.toDate?.() || new Date(reminder.dateTime)
-  return isNaN(dt.getTime()) ? null : dt.getTime()
+  try {
+    let dt
+    if (typeof reminder.dateTime.toDate === 'function') {
+      dt = reminder.dateTime.toDate()
+    } else if (reminder.dateTime.seconds) {
+      dt = new Date(reminder.dateTime.seconds * 1000)
+    } else {
+      dt = new Date(reminder.dateTime)
+    }
+    return isNaN(dt.getTime()) ? null : dt.getTime()
+  } catch (e) {
+    return null
+  }
 }
 
 // ── Programar timers para todos los reminders ──────────────
