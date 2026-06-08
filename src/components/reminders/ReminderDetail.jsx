@@ -1,25 +1,21 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../../context/AuthContext'
-import { subscribeToMySentShares } from '../../services/remindersService'
+import { useMemo } from 'react'
+import { useReminders } from '../../context/RemindersContext'
 import { formatDate, formatTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
 import { EditIcon, DeleteIcon, ShareIcon } from '../shared/Icons'
 
 export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, onClose }) {
-  const { user } = useAuth()
-  const [shares, setShares] = useState([])
+  const { sentShares } = useReminders()
+  const shares = useMemo(() =>
+    !reminder.isShared
+      ? sentShares.filter(s => s.originalReminderId === reminder.id)
+      : [],
+    [sentShares, reminder.id, reminder.isShared]
+  )
   const cat = getCategoryById(reminder.category)
   const imp = getImportanceById(reminder.importance)
   const overdue = isOverdue(reminder.dateTime)
   const color = reminder.color || '#7C3AED'
-
-  useEffect(() => {
-    if (!user || reminder.isShared) return
-    return subscribeToMySentShares(user.uid, (allShares) => {
-      const related = allShares.filter(s => s.originalReminderId === reminder.id)
-      setShares(related)
-    })
-  }, [user, reminder.id, reminder.isShared])
 
   const handleDelete = () => {
     if (window.confirm('¿Eliminar este recordatorio?')) onDelete()

@@ -1,32 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { subscribeToMyReminders, subscribeToMySentShares } from '../services/remindersService'
+import { useReminders } from '../context/RemindersContext'
 import CalendarView from '../components/calendar/CalendarView'
 import ReminderCard from '../components/reminders/ReminderCard'
 import ReminderForm from '../components/reminders/ReminderForm'
 import Modal from '../components/shared/Modal'
 import Header from '../components/layout/Header'
-import { updateReminder, deleteReminder, createReminder } from '../services/remindersService'
+import { updateReminder, deleteReminder } from '../services/remindersService'
 import { isSameDayAs, formatDate } from '../utils/dateUtils'
 import toast from 'react-hot-toast'
 import { isToday } from 'date-fns'
 
 export default function CalendarPage() {
   const { user } = useAuth()
-  const [reminders, setReminders] = useState([])
-  const [sentShares, setSentShares] = useState([])
+  const { reminders, sentShares } = useReminders()
   const [selectedDay, setSelectedDay] = useState(new Date())
   const [editTarget, setEditTarget] = useState(null)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    if (!user) return
-    const unsub = subscribeToMyReminders(user.uid, setReminders)
-    const unsub2 = subscribeToMySentShares(user.uid, setSentShares)
-    return () => { unsub(); unsub2() }
-  }, [user])
-
-  const dayReminders = reminders.filter(r => isSameDayAs(r.dateTime, selectedDay))
+  const dayReminders = useMemo(() =>
+    reminders.filter(r => isSameDayAs(r.dateTime, selectedDay)),
+    [reminders, selectedDay]
+  )
 
   const handleEdit = async (data) => {
     setLoading(true)

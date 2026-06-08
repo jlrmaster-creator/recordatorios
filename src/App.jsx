@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { useState, useEffect } from 'react'
-import { subscribeToMyReminders } from './services/remindersService'
+import { RemindersProvider, useReminders } from './context/RemindersContext'
 
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
@@ -38,15 +37,7 @@ const LoadingScreen = () => (
 // Protected app shell with nav
 function AppShell() {
   const { user, loading } = useAuth()
-  const [pendingCount, setPendingCount] = useState(0)
-
-  useEffect(() => {
-    if (!user) return
-    return subscribeToMyReminders(user.uid, (reminders) => {
-      const count = reminders.filter(r => r.isShared && r.status === 'pending').length
-      setPendingCount(count)
-    })
-  }, [user])
+  const { pendingCount } = useReminders()
 
   if (loading) return <LoadingScreen />
   if (!user) return <LoginPage />
@@ -69,32 +60,34 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename={import.meta.env.BASE_URL}>
-        <ReloadPrompt />
-        <AppShell />
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#16162A',
-              color: '#F1F0FF',
-              border: '1px solid rgba(255,255,255,0.10)',
-              fontFamily: 'Inter, system-ui, sans-serif',
-              fontSize: '0.875rem',
-              borderRadius: '12px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-              maxWidth: '360px'
-            },
-            success: {
-              iconTheme: { primary: '#06D6A0', secondary: '#0F0F1A' }
-            },
-            error: {
-              iconTheme: { primary: '#EF4444', secondary: '#0F0F1A' }
-            }
-          }}
-        />
-      </BrowserRouter>
+      <RemindersProvider>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <ReloadPrompt />
+          <AppShell />
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: '#16162A',
+                color: '#F1F0FF',
+                border: '1px solid rgba(255,255,255,0.10)',
+                fontFamily: 'Inter, system-ui, sans-serif',
+                fontSize: '0.875rem',
+                borderRadius: '12px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                maxWidth: '360px'
+              },
+              success: {
+                iconTheme: { primary: '#06D6A0', secondary: '#0F0F1A' }
+              },
+              error: {
+                iconTheme: { primary: '#EF4444', secondary: '#0F0F1A' }
+              }
+            }}
+          />
+        </BrowserRouter>
+      </RemindersProvider>
     </AuthProvider>
   )
 }

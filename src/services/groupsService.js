@@ -5,6 +5,10 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 
+// Simple cache for group members (30s TTL)
+const membersCache = new Map()
+const CACHE_TTL = 30_000
+
 // Generate random 6-char invite code
 const generateCode = () => Math.random().toString(36).substring(2, 8).toUpperCase()
 
@@ -78,13 +82,20 @@ export const subscribeToUserGroups = (userId, callback) => {
 // ── GET GROUP MEMBERS ────────────────────────────────────
 export const getGroupMembers = async (memberIds) => {
   if (!memberIds || memberIds.length === 0) return []
-  const members = await Promise.all(
+
+  const cacheKey = [...memberIds].sort().join(',')
+  const cached = membersCache.get(cacheKey)
+  if (cached && Date.now() - cached.ts < CACHE_TTL) return cached.data
+
+  const members = (await Promise.all(
     memberIds.map(async (uid) => {
       const snap = await getDoc(doc(db, 'users', uid))
       return snap.exists() ? { id: snap.id, ...snap.data() } : null
     })
-  )
-  return members.filter(Boolean)
+  )).filter(Boolean)
+
+  membersCache.set(cacheKey, { data: members, ts: Date.now() })
+  return members
 }
 
 // ── GET GROUP BY ID ──────────────────────────────────────

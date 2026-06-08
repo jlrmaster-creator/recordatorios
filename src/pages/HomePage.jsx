@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useReminders } from '../context/RemindersContext'
 import {
-  subscribeToMyReminders,
-  subscribeToMySentShares,
   createReminder, updateReminder, deleteReminder
 } from '../services/remindersService'
 import ReminderCard from '../components/reminders/ReminderCard'
@@ -16,8 +15,7 @@ import { CATEGORIES, IMPORTANCE } from '../utils/colorUtils'
 
 export default function HomePage() {
   const { user } = useAuth()
-  const [reminders, setReminders] = useState([])
-  const [sentShares, setSentShares] = useState([])
+  const { reminders, sentShares } = useReminders()
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [shareTarget, setShareTarget] = useState(null)
@@ -25,13 +23,6 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [filterImportance, setFilterImportance] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
-
-  useEffect(() => {
-    if (!user) return
-    const unsub = subscribeToMyReminders(user.uid, setReminders)
-    const unsub2 = subscribeToMySentShares(user.uid, setSentShares)
-    return () => { unsub(); unsub2() }
-  }, [user])
 
   const handleCreate = async (data) => {
     setLoading(true)
@@ -58,23 +49,21 @@ export default function HomePage() {
     } catch { toast.error('Error al eliminar') }
   }
 
-  // Filters
-  const filtered = reminders.filter(r => {
+  const filtered = useMemo(() => reminders.filter(r => {
     const matchSearch = !search || r.title.toLowerCase().includes(search.toLowerCase()) || (r.description || '').toLowerCase().includes(search.toLowerCase())
     const matchImp = filterImportance === 'all' || r.importance === filterImportance
     const matchCat = filterCategory === 'all' || r.category === filterCategory
     return matchSearch && matchImp && matchCat
-  })
+  }), [reminders, search, filterImportance, filterCategory])
 
-  // Sort: pending first, then by dateTime
-  const sorted = [...filtered].sort((a, b) => {
+  const sorted = useMemo(() => [...filtered].sort((a, b) => {
     const ta = a.dateTime?.toDate?.() || new Date(a.dateTime || 0)
     const tb = b.dateTime?.toDate?.() || new Date(b.dateTime || 0)
     return ta - tb
-  })
+  }), [filtered])
 
-  const ownReminders = sorted.filter(r => !r.isShared)
-  const sharedAccepted = sorted.filter(r => r.isShared && r.status === 'accepted')
+  const ownReminders = useMemo(() => sorted.filter(r => !r.isShared), [sorted])
+  const sharedAccepted = useMemo(() => sorted.filter(r => r.isShared && r.status === 'accepted'), [sorted])
 
   return (
     <>

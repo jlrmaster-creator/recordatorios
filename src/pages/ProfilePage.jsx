@@ -1,7 +1,7 @@
 import { useAuth } from '../context/AuthContext'
+import { useReminders } from '../context/RemindersContext'
 import { logoutUser } from '../services/authService'
-import { useState, useEffect } from 'react'
-import { subscribeToMyReminders } from '../services/remindersService'
+import { useState, useEffect, useMemo } from 'react'
 import { subscribeToUserGroups } from '../services/groupsService'
 import Header from '../components/layout/Header'
 import { LogoutIcon } from '../components/shared/Icons'
@@ -9,24 +9,17 @@ import toast from 'react-hot-toast'
 
 export default function ProfilePage() {
   const { user, profile } = useAuth()
-  const [reminders, setReminders] = useState([])
+  const { reminders } = useReminders()
   const [groups, setGroups] = useState([])
 
   useEffect(() => {
     if (!user) return
-    const u1 = subscribeToMyReminders(user.uid, setReminders)
-    const u2 = subscribeToUserGroups(user.uid, setGroups)
-    return () => { u1(); u2() }
+    return subscribeToUserGroups(user.uid, setGroups)
   }, [user])
 
-  const handleLogout = async () => {
-    try { await logoutUser() }
-    catch { toast.error('Error al cerrar sesión') }
-  }
-
-  const ownCount = reminders.filter(r => !r.isShared).length
-  const sharedCount = reminders.filter(r => r.isShared && r.status === 'accepted').length
-  const highCount = reminders.filter(r => r.importance === 'high' && !r.isShared).length
+  const ownCount = useMemo(() => reminders.filter(r => !r.isShared).length, [reminders])
+  const sharedCount = useMemo(() => reminders.filter(r => r.isShared && r.status === 'accepted').length, [reminders])
+  const highCount = useMemo(() => reminders.filter(r => r.importance === 'high' && !r.isShared).length, [reminders])
 
   const initials = (profile?.displayName || user?.displayName || 'U')
     .split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)

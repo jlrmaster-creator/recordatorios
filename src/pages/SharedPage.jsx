@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { subscribeToMyReminders, acceptSharedReminder, rejectSharedReminder } from '../services/remindersService'
+import { useMemo } from 'react'
+import { useReminders } from '../context/RemindersContext'
+import { acceptSharedReminder, rejectSharedReminder } from '../services/remindersService'
 import Header from '../components/layout/Header'
 import { CheckIcon, XIcon } from '../components/shared/Icons'
 import { formatDateTime } from '../utils/dateUtils'
@@ -9,15 +9,10 @@ import toast from 'react-hot-toast'
 
 export default function SharedPage() {
   const { user } = useAuth()
-  const [allReminders, setAllReminders] = useState([])
+  const { reminders } = useReminders()
 
-  useEffect(() => {
-    if (!user) return
-    return subscribeToMyReminders(user.uid, setAllReminders)
-  }, [user])
-
-  const pending = allReminders.filter(r => r.isShared && r.status === 'pending')
-  const accepted = allReminders.filter(r => r.isShared && r.status === 'accepted')
+  const pending = useMemo(() => reminders.filter(r => r.isShared && r.status === 'pending'), [reminders])
+  const accepted = useMemo(() => reminders.filter(r => r.isShared && r.status === 'accepted'), [reminders])
 
   const handleAccept = async (r) => {
     try {
