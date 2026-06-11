@@ -103,6 +103,9 @@ export default function HomePage() {
                   {i.emoji} {i.label}
                 </button>
               ))}
+              <button className={`filter-chip${filterPermanent === 'permanent' ? ' active' : ''}`} onClick={() => setFilterPermanent(filterPermanent === 'permanent' ? 'all' : 'permanent')}>
+                ♾️ Permanentes
+              </button>
             </div>
             <div className="filter-bar">
               <button className={`filter-chip${filterCategory === 'all' ? ' active' : ''}`} onClick={() => setFilterCategory('all')}>Todas</button>
@@ -111,12 +114,6 @@ export default function HomePage() {
                   {c.emoji} {c.label}
                 </button>
               ))}
-            </div>
-            <div className="filter-bar">
-              <button className={`filter-chip${filterPermanent === 'all' ? ' active' : ''}`} onClick={() => setFilterPermanent('all')}>Todos</button>
-              <button className={`filter-chip${filterPermanent === 'permanent' ? ' active' : ''}`} onClick={() => setFilterPermanent('permanent')}>
-                ♾️ Permanentes
-              </button>
             </div>
           </div>
 
