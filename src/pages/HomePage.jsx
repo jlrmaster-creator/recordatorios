@@ -23,6 +23,7 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [filterImportance, setFilterImportance] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
+  const [filterPermanent, setFilterPermanent] = useState('all')
 
   const handleCreate = async (data) => {
     setLoading(true)
@@ -53,8 +54,9 @@ export default function HomePage() {
     const matchSearch = !search || r.title.toLowerCase().includes(search.toLowerCase()) || (r.description || '').toLowerCase().includes(search.toLowerCase())
     const matchImp = filterImportance === 'all' || r.importance === filterImportance
     const matchCat = filterCategory === 'all' || r.category === filterCategory
-    return matchSearch && matchImp && matchCat
-  }), [reminders, search, filterImportance, filterCategory])
+    const matchPerm = filterPermanent === 'all' || r.isPermanent === true
+    return matchSearch && matchImp && matchCat && matchPerm
+  }), [reminders, search, filterImportance, filterCategory, filterPermanent])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
     if (a.isPermanent && !b.isPermanent) return -1
@@ -109,6 +111,12 @@ export default function HomePage() {
                   {c.emoji} {c.label}
                 </button>
               ))}
+            </div>
+            <div className="filter-bar">
+              <button className={`filter-chip${filterPermanent === 'all' ? ' active' : ''}`} onClick={() => setFilterPermanent('all')}>Todos</button>
+              <button className={`filter-chip${filterPermanent === 'permanent' ? ' active' : ''}`} onClick={() => setFilterPermanent('permanent')}>
+                ♾️ Permanentes
+              </button>
             </div>
           </div>
 
