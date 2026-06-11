@@ -25,6 +25,13 @@ export default function HomePage() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [filterPermanent, setFilterPermanent] = useState('all')
 
+  // Al cargar/abrir la app, descartar la notificación del badge
+  useEffect(() => {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_PERMANENT_BADGE' })
+    }
+  }, [])
+
   const handleCreate = async (data) => {
     setLoading(true)
     try {

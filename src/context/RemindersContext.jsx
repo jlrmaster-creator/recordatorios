@@ -35,18 +35,11 @@ export const RemindersProvider = ({ children }) => {
     }
   }, [user, reminders])
 
-  // Badge en el icono de la app con el nº de recordatorios permanentes
+  // Badge en el icono vía notificación silenciosa (Android)
   useEffect(() => {
     const count = reminders.filter(r => r.isPermanent).length
-    try {
-      if (count > 0) navigator.setAppBadge(count)
-      else navigator.clearAppBadge()
-    } catch (e) {
-      console.warn('Badge API error:', e)
-    }
-    // También enviar al SW para persistencia
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'SET_BADGE', count })
+      navigator.serviceWorker.controller.postMessage({ type: 'SET_PERMANENT_BADGE', count })
     }
   }, [reminders])
 

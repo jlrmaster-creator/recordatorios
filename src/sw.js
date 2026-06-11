@@ -5,11 +5,6 @@ import { NetworkFirst } from 'workbox-strategies'
 precacheAndRoute(self.__WB_MANIFEST)
 cleanupOutdatedCaches()
 
-// Limpiar badge al activarse (se restablecerá desde la página)
-self.addEventListener('activate', () => {
-  if (self.registration.setAppBadge) self.registration.setAppBadge(0)
-})
-
 // Usar NetworkFirst para HTML: siempre intenta traer la última versión del servidor
 // Si no hay conexión, usa la última guardada en caché.
 registerRoute(
@@ -22,12 +17,37 @@ registerRoute(
 self.addEventListener('message', (e) => {
   if (e.data && 'SKIP_WAITING' === e.data.type) self.skipWaiting()
 
-  // Badge count en el icono de la app
-  if (e.data && e.data.type === 'SET_BADGE') {
+  // Badge en Android mediante notificación silenciosa
+  if (e.data && e.data.type === 'SET_PERMANENT_BADGE') {
     const count = e.data.count || 0
-    if (self.registration.setAppBadge) {
-      e.waitUntil(self.registration.setAppBadge(count))
+    if (count > 0) {
+      e.waitUntil(
+        self.registration.showNotification('Recordatorios', {
+          body: count === 1 ? '1 recordatorio permanente' : `${count} recordatorios permanentes`,
+          tag: 'permanent-badge',
+          silent: true,
+          requireInteraction: false,
+          icon: '/recordatorios/icon-192x192.png',
+          badge: '/recordatorios/icon-192x192.png',
+          data: { clickAction: '/recordatorios/' }
+        })
+      )
+    } else {
+      e.waitUntil(
+        self.registration.getNotifications({ tag: 'permanent-badge' })
+          .then(notifs => notifs.forEach(n => n.close()))
+      )
     }
+    return
+  }
+
+  // Al abrir la app, cerrar la notificación del badge
+  if (e.data && e.data.type === 'CLEAR_PERMANENT_BADGE') {
+    e.waitUntil(
+      self.registration.getNotifications({ tag: 'permanent-badge' })
+        .then(notifs => notifs.forEach(n => n.close()))
+    )
+    return
   }
 
   // Soporte para notificaciones locales enviadas desde la app
