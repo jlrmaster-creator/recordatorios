@@ -206,13 +206,16 @@ export default function HomePage() {
       <div style={{ position: 'fixed', bottom: 24, right: 24, display: 'flex', gap: 12, zIndex: 100 }}>
         <button className="fab" onClick={() => setVoiceModalOpen(true)}
           title="Crear por voz"
+          style={{ position: 'static' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
             <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/>
           </svg>
         </button>
-        <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}>
+        <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}
+          style={{ position: 'static' }}
+        >
           <PlusIcon />
         </button>
       </div>
