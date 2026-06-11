@@ -35,6 +35,15 @@ export const RemindersProvider = ({ children }) => {
     }
   }, [user, reminders])
 
+  // Badge en el icono de la app con el nº de recordatorios permanentes
+  useEffect(() => {
+    const count = reminders.filter(r => r.isPermanent).length
+    if ('setAppBadge' in navigator) {
+      if (count > 0) navigator.setAppBadge(count)
+      else navigator.clearAppBadge()
+    }
+  }, [reminders])
+
   const pendingCount = reminders.filter(r => r.isShared && r.status === 'pending').length
 
   return (
