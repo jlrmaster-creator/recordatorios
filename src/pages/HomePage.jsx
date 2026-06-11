@@ -203,10 +203,10 @@ export default function HomePage() {
       </div>
 
       {/* FABs */}
-      <div style={{ position: 'fixed', bottom: 24, right: 24, display: 'flex', gap: 12, zIndex: 100 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(var(--nav-height) + 20px)', right: 24, display: 'flex', gap: 12, zIndex: 100 }}>
         <button className="fab" onClick={() => setVoiceModalOpen(true)}
           title="Crear por voz"
-          style={{ position: 'static' }}
+          style={{ position: 'static', background: 'linear-gradient(135deg, var(--teal), #0D9488)' }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
