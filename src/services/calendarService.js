@@ -45,6 +45,7 @@ export const initGoogleApis = () => {
         scope: SCOPES,
         callback: (resp) => {
           if (resp.access_token) {
+            if (window.gapi?.client) window.gapi.client.setToken(resp)
             resolvePending(resp.access_token)
           }
         },
@@ -62,6 +63,7 @@ export const getAccessToken = () => {
 
     tokenClient.callback = (resp) => {
       if (resp.access_token) {
+        if (window.gapi?.client) window.gapi.client.setToken(resp)
         resolve(resp.access_token)
       } else if (resp.error) {
         if (resp.error === 'popup_closed' || resp.error === 'user_closed') {

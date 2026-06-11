@@ -3,7 +3,7 @@ import { useReminders } from '../../context/RemindersContext'
 import { formatDate, formatTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
 import { EditIcon, DeleteIcon, ShareIcon, CalIcon } from '../shared/Icons'
-import { createCalendarEvent, getConnectionStatus, initGoogleApis } from '../../services/calendarService'
+import { createCalendarEvent, getAccessToken, getConnectionStatus, initGoogleApis } from '../../services/calendarService'
 import Modal from '../shared/Modal'
 import toast from 'react-hot-toast'
 
@@ -27,12 +27,15 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
     try {
       await initGoogleApis()
       if (!getConnectionStatus()) {
-        toast.error('Conecta Google Calendar desde tu perfil primero')
-        return
+        await getAccessToken()
       }
       await createCalendarEvent(reminder)
       toast.success('Añadido a Google Calendar ✓')
-    } catch { toast.error('Error al añadir al calendario') }
+    } catch (e) {
+      const msg = e?.result?.error?.message || e?.message || 'Error desconocido'
+      if (msg.includes('Ventana cerrada')) return
+      toast.error('Error al añadir: ' + msg)
+    }
     finally { setCalAdding(false) }
   }
 
