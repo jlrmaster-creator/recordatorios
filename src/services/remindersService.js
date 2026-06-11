@@ -1,7 +1,7 @@
 import {
   collection, doc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, onSnapshot, serverTimestamp,
-  getDoc, getDocs, writeBatch
+  getDoc
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -73,6 +73,17 @@ export const deleteReminder = async (reminderId) => {
 
 // ── SHARE ────────────────────────────────────────────────
 export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toUserName) => {
+  // Create share log FIRST so we get its ID
+  const logRef = await addDoc(collection(db, 'sharedReminders'), {
+    originalReminderId: reminder.id,
+    fromUserId,
+    toUserId,
+    toUserName: toUserName || 'Usuario',
+    groupId,
+    status: 'pending',
+    createdAt: serverTimestamp()
+  })
+
   // Create a copy of the reminder for the recipient
   const sharedRef = await addDoc(collection(db, 'reminders'), {
     title: reminder.title,
@@ -86,46 +97,44 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
     sharedFrom: fromUserId,
     sharedFromName: reminder.sharedFromName || 'Unknown',
     originalId: reminder.id,
+    sharedReminderId: logRef.id,
     status: 'pending',
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   })
 
-  // Log the share event
-  await addDoc(collection(db, 'sharedReminders'), {
-    reminderId: sharedRef.id,
-    originalReminderId: reminder.id,
-    fromUserId,
-    toUserId,
-    toUserName: toUserName || 'Usuario',
-    groupId,
-    status: 'pending',
-    createdAt: serverTimestamp()
+  // Update the log with the reminder ID
+  await updateDoc(doc(db, 'sharedReminders', logRef.id), {
+    reminderId: sharedRef.id
   })
 
   return sharedRef.id
 }
 
 export const acceptSharedReminder = async (reminderId) => {
+  const snap = await getDoc(doc(db, 'reminders', reminderId))
+  if (!snap.exists()) return
+  const data = snap.data()
+
   await updateDoc(doc(db, 'reminders', reminderId), {
     status: 'accepted',
     updatedAt: serverTimestamp()
   })
-  
-  const q = query(collection(db, 'sharedReminders'), where('reminderId', '==', reminderId))
-  const snap = await getDocs(q)
-  if (!snap.empty) {
-    await updateDoc(doc(db, 'sharedReminders', snap.docs[0].id), { status: 'accepted' })
+
+  if (data.sharedReminderId) {
+    await updateDoc(doc(db, 'sharedReminders', data.sharedReminderId), { status: 'accepted' })
   }
 }
 
 export const rejectSharedReminder = async (reminderId) => {
+  const snap = await getDoc(doc(db, 'reminders', reminderId))
+  if (!snap.exists()) return
+  const data = snap.data()
+
   await deleteDoc(doc(db, 'reminders', reminderId))
-  
-  const q = query(collection(db, 'sharedReminders'), where('reminderId', '==', reminderId))
-  const snap = await getDocs(q)
-  if (!snap.empty) {
-    await updateDoc(doc(db, 'sharedReminders', snap.docs[0].id), { status: 'rejected' })
+
+  if (data.sharedReminderId) {
+    await updateDoc(doc(db, 'sharedReminders', data.sharedReminderId), { status: 'rejected' })
   }
 }
 
