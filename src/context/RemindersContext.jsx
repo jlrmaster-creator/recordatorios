@@ -38,9 +38,13 @@ export const RemindersProvider = ({ children }) => {
   // Badge en el icono de la app con el nº de recordatorios permanentes
   useEffect(() => {
     const count = reminders.filter(r => r.isPermanent).length
-    if ('setAppBadge' in navigator) {
+    try {
       if (count > 0) navigator.setAppBadge(count)
       else navigator.clearAppBadge()
+    } catch {}
+    // También enviar al SW para persistencia
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'SET_BADGE', count })
     }
   }, [reminders])
 
