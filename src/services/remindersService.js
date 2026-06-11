@@ -77,7 +77,7 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
   const sharedRef = await addDoc(collection(db, 'reminders'), {
     title: reminder.title,
     description: reminder.description,
-    dateTime: reminder.dateTime,
+    dateTime: reminder.dateTime || serverTimestamp(),
     importance: reminder.importance,
     color: reminder.color,
     category: reminder.category,

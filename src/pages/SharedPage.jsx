@@ -17,14 +17,14 @@ export default function SharedPage() {
     try {
       await acceptSharedReminder(r.id, null)
       toast.success('Recordatorio aceptado ✓')
-    } catch { toast.error('Error') }
+    } catch (e) { console.error('Error al aceptar:', e); toast.error('Error al aceptar') }
   }
 
   const handleReject = async (r) => {
     try {
       await rejectSharedReminder(r.id, null)
       toast.success('Rechazado')
-    } catch { toast.error('Error') }
+    } catch (e) { console.error('Error al rechazar:', e); toast.error('Error al rechazar') }
   }
 
   const ReminderRow = ({ r, showActions }) => {
