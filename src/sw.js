@@ -7,7 +7,7 @@ cleanupOutdatedCaches()
 
 // Limpiar badge al activarse (se restablecerá desde la página)
 self.addEventListener('activate', () => {
-  self.registration.setAppBadge?.(0)
+  if (self.registration.setAppBadge) self.registration.setAppBadge(0)
 })
 
 // Usar NetworkFirst para HTML: siempre intenta traer la última versión del servidor
@@ -25,7 +25,9 @@ self.addEventListener('message', (e) => {
   // Badge count en el icono de la app
   if (e.data && e.data.type === 'SET_BADGE') {
     const count = e.data.count || 0
-    e.waitUntil(self.registration.setAppBadge?.(count))
+    if (self.registration.setAppBadge) {
+      e.waitUntil(self.registration.setAppBadge(count))
+    }
   }
 
   // Soporte para notificaciones locales enviadas desde la app

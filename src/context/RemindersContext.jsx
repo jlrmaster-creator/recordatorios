@@ -41,7 +41,9 @@ export const RemindersProvider = ({ children }) => {
     try {
       if (count > 0) navigator.setAppBadge(count)
       else navigator.clearAppBadge()
-    } catch {}
+    } catch (e) {
+      console.warn('Badge API error:', e)
+    }
     // También enviar al SW para persistencia
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({ type: 'SET_BADGE', count })
