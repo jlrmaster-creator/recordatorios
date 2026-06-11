@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react'
 import { useReminders } from '../../context/RemindersContext'
 import { formatDate, formatTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
-import { EditIcon, DeleteIcon, ShareIcon } from '../shared/Icons'
+import { EditIcon, DeleteIcon, ShareIcon, CalIcon } from '../shared/Icons'
+import { createCalendarEvent, getConnectionStatus, initGoogleApis } from '../../services/calendarService'
 import Modal from '../shared/Modal'
+import toast from 'react-hot-toast'
 
 export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, onClose }) {
   const { sentShares } = useReminders()
@@ -18,6 +20,21 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
   const imp = getImportanceById(reminder.importance)
   const overdue = isOverdue(reminder.dateTime)
   const color = reminder.color || '#7C3AED'
+  const [calAdding, setCalAdding] = useState(false)
+
+  const handleCalAdd = async () => {
+    setCalAdding(true)
+    try {
+      await initGoogleApis()
+      if (!getConnectionStatus()) {
+        toast.error('Conecta Google Calendar desde tu perfil primero')
+        return
+      }
+      await createCalendarEvent(reminder)
+      toast.success('Añadido a Google Calendar ✓')
+    } catch { toast.error('Error al añadir al calendario') }
+    finally { setCalAdding(false) }
+  }
 
   const handleDelete = () => setConfirmOpen(true)
 
@@ -108,6 +125,9 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8 }}>
+        <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={handleCalAdd} disabled={calAdding} title="Añadir a Google Calendar">
+          <CalIcon /> {calAdding ? '...' : 'Calendar'}
+        </button>
         {!reminder.isShared && (
           <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={onEdit}>
             <EditIcon /> Editar
