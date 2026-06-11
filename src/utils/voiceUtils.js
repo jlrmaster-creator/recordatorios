@@ -124,8 +124,11 @@ export const parseVoiceText = (text) => {
   const dt = dateObj ? new Date(dateObj) : new Date()
   if (timeObj) {
     dt.setHours(timeObj.hour, timeObj.minute, 0, 0)
+  } else if (dateObj && !relativeDate) {
+    // Fecha explícita sin hora: default a las 8:00 AM
+    dt.setHours(8, 0, 0, 0)
   } else if (!relativeDate) {
-    // Default: 1 hora desde ahora
+    // Sin fecha ni hora: 1 hora desde ahora
     dt.setHours(dt.getHours() + 1, 0, 0, 0)
   }
 
