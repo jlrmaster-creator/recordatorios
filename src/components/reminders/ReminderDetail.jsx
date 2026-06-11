@@ -40,6 +40,7 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
               {imp?.emoji} {imp?.label}
             </span>
             {cat && <span className="badge badge-category">{cat.label}</span>}
+            {reminder.isPermanent && <span className="badge" style={{ background: 'rgba(255,215,0,0.15)', color: '#FFD700' }}>♾️ Permanente</span>}
             {reminder.isShared && <span className="badge badge-shared">Recibido</span>}
           </div>
         </div>

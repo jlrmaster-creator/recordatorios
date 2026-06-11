@@ -81,6 +81,7 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
     importance: reminder.importance,
     color: reminder.color,
     category: reminder.category,
+    isPermanent: reminder.isPermanent || false,
     ownerId: toUserId,
     isShared: true,
     sharedFrom: fromUserId,

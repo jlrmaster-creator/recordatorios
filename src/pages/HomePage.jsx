@@ -57,6 +57,8 @@ export default function HomePage() {
   }), [reminders, search, filterImportance, filterCategory])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
+    if (a.isPermanent && !b.isPermanent) return -1
+    if (!a.isPermanent && b.isPermanent) return 1
     const ta = a.dateTime?.toDate?.() || new Date(a.dateTime || 0)
     const tb = b.dateTime?.toDate?.() || new Date(b.dateTime || 0)
     return ta - tb

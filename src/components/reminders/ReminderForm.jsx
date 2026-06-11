@@ -11,7 +11,8 @@ const defaultForm = {
   dateTime: '',
   importance: 'medium',
   color: '#7C3AED',
-  category: 'personal'
+  category: 'personal',
+  isPermanent: false
 }
 
 export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
@@ -27,7 +28,8 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
         dateTime: initial.dateTime ? toInputDateTime(initial.dateTime) : '',
         importance: initial.importance || 'medium',
         color: initial.color || '#7C3AED',
-        category: initial.category || 'personal'
+        category: initial.category || 'personal',
+        isPermanent: initial.isPermanent || false
       })
     } else {
       // Default to 1 hour from now
@@ -101,6 +103,19 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
           maxLength={300}
           rows={3}
         />
+      </div>
+
+      {/* Permanent */}
+      <div className="form-group">
+        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={form.isPermanent}
+            onChange={e => set('isPermanent', e.target.checked)}
+            style={{ width: 18, height: 18, accentColor: 'var(--primary)' }}
+          />
+          <span>Permanente <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>(siempre visible al inicio)</span></span>
+        </label>
       </div>
 
       {/* Date/time */}
