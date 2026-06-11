@@ -94,14 +94,14 @@ export default function HomePage() {
         title="Mis Recordatorios"
         right={
           <div style={{ display: 'flex', gap: 4 }}>
+            <button className="header-action" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}>
+              <PlusIcon />
+            </button>
             <button className="header-action" onClick={() => setVoiceModalOpen(true)} title="Crear por voz">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
                 <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/>
               </svg>
-            </button>
-            <button className="header-action" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}>
-              <PlusIcon />
             </button>
           </div>
         }
@@ -203,7 +203,15 @@ export default function HomePage() {
       </div>
 
       {/* FABs */}
-      <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 100 }}>
+      <div style={{ position: 'fixed', bottom: 24, right: 24, display: 'flex', gap: 12, zIndex: 100 }}>
+        <button className="fab" onClick={() => setVoiceModalOpen(true)}
+          title="Crear por voz"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
+            <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/>
+          </svg>
+        </button>
         <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}>
           <PlusIcon />
         </button>
