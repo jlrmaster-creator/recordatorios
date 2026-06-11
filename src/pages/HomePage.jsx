@@ -6,6 +6,7 @@ import {
 } from '../services/remindersService'
 import ReminderCard from '../components/reminders/ReminderCard'
 import ReminderForm from '../components/reminders/ReminderForm'
+import VoiceModal from '../components/reminders/VoiceModal'
 import Modal from '../components/shared/Modal'
 import Header from '../components/layout/Header'
 import ShareModal from '../components/reminders/ShareModal'
@@ -19,6 +20,8 @@ export default function HomePage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [shareTarget, setShareTarget] = useState(null)
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false)
+  const [voicePrefill, setVoicePrefill] = useState(null)
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filterImportance, setFilterImportance] = useState('all')
@@ -38,6 +41,7 @@ export default function HomePage() {
       await createReminder(user.uid, data)
       toast.success('Recordatorio creado ✓')
       setFormOpen(false)
+      setVoicePrefill(null)
     } catch { toast.error('Error al crear') } finally { setLoading(false) }
   }
 
@@ -55,6 +59,14 @@ export default function HomePage() {
       await deleteReminder(id)
       toast.success('Eliminado')
     } catch { toast.error('Error al eliminar') }
+  }
+
+  const handleVoiceResult = (data) => {
+    if (data) {
+      setVoicePrefill(data)
+      setEditTarget(null)
+      setFormOpen(true)
+    }
   }
 
   const filtered = useMemo(() => reminders.filter(r => {
@@ -182,21 +194,34 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* FAB */}
-      <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true) }}>
-        <PlusIcon />
-      </button>
+      {/* FABs */}
+      <div style={{ position: 'fixed', bottom: 24, right: 24, display: 'flex', flexDirection: 'column', gap: 12, zIndex: 100 }}>
+        <button className="fab" onClick={() => setVoiceModalOpen(true)}
+          style={{ background: 'var(--primary)', width: 52, height: 52, position: 'static' }}
+          title="Crear por voz"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
+            <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/>
+          </svg>
+        </button>
+        <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}
+          style={{ position: 'static' }}
+        >
+          <PlusIcon />
+        </button>
+      </div>
 
       {/* Create/Edit Modal */}
       <Modal
         open={formOpen || !!editTarget}
-        onClose={() => { setFormOpen(false); setEditTarget(null) }}
+        onClose={() => { setFormOpen(false); setEditTarget(null); setVoicePrefill(null) }}
         title={editTarget ? 'Editar recordatorio' : 'Nuevo recordatorio'}
       >
         <ReminderForm
-          initial={editTarget}
+          initial={editTarget || voicePrefill}
           onSubmit={editTarget ? handleEdit : handleCreate}
-          onCancel={() => { setFormOpen(false); setEditTarget(null) }}
+          onCancel={() => { setFormOpen(false); setEditTarget(null); setVoicePrefill(null) }}
           loading={loading}
         />
       </Modal>
@@ -210,6 +235,13 @@ export default function HomePage() {
           userDisplayName={user.displayName}
         />
       )}
+
+      {/* Voice Modal */}
+      <VoiceModal
+        open={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onResult={handleVoiceResult}
+      />
     </>
   )
 }
