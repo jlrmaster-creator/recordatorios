@@ -109,6 +109,18 @@ export const createCalendarEvent = async (reminder) => {
   return response.result
 }
 
+export const deleteCalendarEvent = async (eventId) => {
+  if (!eventId) return
+  try {
+    await window.gapi.client.calendar.events.delete({
+      calendarId: 'primary',
+      eventId,
+    })
+  } catch (e) {
+    console.warn('Error deleting calendar event:', e?.result?.error?.message || e.message)
+  }
+}
+
 export const getConnectionStatus = () => {
   const token = window.gapi?.client?.getToken()
   return !!token?.access_token

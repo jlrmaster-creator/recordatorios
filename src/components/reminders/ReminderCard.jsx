@@ -28,6 +28,9 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
               {reminder.isPermanent && (
                 <div className="permanent-badge" style={{ marginBottom: 2 }}>♾️ Permanente</div>
               )}
+              {reminder.calendarEventId && (
+                <div className="permanent-badge" style={{ marginBottom: 2, color: '#4285F4' }}>📅 Calendar</div>
+              )}
               {reminder.isShared && (
                 <div className="received-badge" style={{ marginBottom: 4 }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
