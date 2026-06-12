@@ -127,20 +127,22 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={handleCalAdd} disabled={calAdding} title="Añadir a Google Calendar">
-          <CalIcon /> {calAdding ? '...' : 'Calendar'}
-        </button>
-        {!reminder.isShared && (
-          <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={onEdit}>
-            <EditIcon /> Editar
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={handleCalAdd} disabled={calAdding} title="Añadir a Google Calendar">
+            <CalIcon /> {calAdding ? '...' : 'Calendar'}
           </button>
-        )}
-        {onShare && (
-          <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={onShare}>
-            <ShareIcon /> Compartir
-          </button>
-        )}
+          {!reminder.isShared && (
+            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={onEdit}>
+              <EditIcon /> Editar
+            </button>
+          )}
+          {onShare && (
+            <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={onShare}>
+              <ShareIcon /> Compartir
+            </button>
+          )}
+        </div>
         <button className="btn btn-danger btn-sm" style={{ flex: 1 }} onClick={handleDelete}>
           <DeleteIcon /> Eliminar
         </button>
