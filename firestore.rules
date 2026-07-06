@@ -64,3 +64,4 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy;
     }
   }
+}
