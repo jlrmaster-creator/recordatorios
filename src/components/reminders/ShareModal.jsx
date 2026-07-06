@@ -10,7 +10,7 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
   const [groups, setGroups] = useState([])
   const [selectedGroupId, setSelectedGroupId] = useState('')
   const [members, setMembers] = useState([])
-  const [selectedMemberId, setSelectedMemberId] = useState('')
+  const [selectedMemberIds, setSelectedMemberIds] = useState([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
   }, [userId])
 
   useEffect(() => {
-    if (!selectedGroupId) { setMembers([]); setSelectedMemberId(''); return }
+    if (!selectedGroupId) { setMembers([]); setSelectedMemberIds([]); return }
     const group = groups.find(g => g.id === selectedGroupId)
     if (!group) return
     getGroupMembers(group.members).then(m => {
@@ -27,20 +27,31 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
     })
   }, [selectedGroupId, groups, userId])
 
+  const toggleMember = (id) => {
+    setSelectedMemberIds(prev =>
+      prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
+    )
+  }
+
+  const selectAll = () => {
+    setSelectedMemberIds(members.map(m => m.id))
+  }
+
+  const deselectAll = () => {
+    setSelectedMemberIds([])
+  }
+
   const handleShare = async () => {
     if (!selectedGroupId) { toast.error('Selecciona un grupo'); return }
-    if (!selectedMemberId) { toast.error('Selecciona un destinatario'); return }
+    if (selectedMemberIds.length === 0) { toast.error('Selecciona al menos un destinatario'); return }
     setLoading(true)
     try {
-      const member = members.find(m => m.id === selectedMemberId)
-      await shareReminder(
-        { ...reminder, sharedFromName: profile?.displayName || userDisplayName || 'Tú' },
-        userId,
-        selectedMemberId,
-        selectedGroupId,
-        member?.displayName
-      )
-      toast.success(`Enviado a ${member?.displayName || 'el usuario'} ✓`)
+      const baseReminder = { ...reminder, sharedFromName: profile?.displayName || userDisplayName || 'Tú' }
+      const selectedMembers = members.filter(m => selectedMemberIds.includes(m.id))
+      await Promise.all(selectedMembers.map(m =>
+        shareReminder(baseReminder, userId, m.id, selectedGroupId, m.displayName)
+      ))
+      toast.success(`Enviado a ${selectedMembers.length} miembro${selectedMembers.length !== 1 ? 's' : ''} ✓`)
       onClose()
     } catch (err) {
       toast.error('Error al compartir')
@@ -48,6 +59,8 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
       setLoading(false)
     }
   }
+
+  const allSelected = members.length > 0 && selectedMemberIds.length === members.length
 
   return (
     <Modal open onClose={onClose} title={`Compartir "${reminder?.title}"`}>
@@ -57,7 +70,7 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
           <select
             className="form-select"
             value={selectedGroupId}
-            onChange={e => { setSelectedGroupId(e.target.value); setSelectedMemberId('') }}
+            onChange={e => { setSelectedGroupId(e.target.value); setSelectedMemberIds([]) }}
           >
             <option value="">-- Elige un grupo --</option>
             {groups.map(g => (
@@ -73,36 +86,53 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
 
         {members.length > 0 && (
           <div className="form-group">
-            <label className="form-label">Enviar a</label>
+            <label className="form-label">Enviar a ({selectedMemberIds.length} seleccionados)</label>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '0.8rem', padding: '4px 12px' }}
+                onClick={allSelected ? deselectAll : selectAll}
+              >
+                {allSelected ? 'Deseleccionar todos' : 'Seleccionar todos'}
+              </button>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {members.map(m => (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => setSelectedMemberId(m.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px', borderRadius: 'var(--radius-md)',
-                    border: `1px solid ${selectedMemberId === m.id ? 'var(--violet)' : 'var(--border-glass)'}`,
-                    background: selectedMemberId === m.id ? 'var(--violet-glow)' : 'var(--bg-card)',
-                    cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
-                  }}
-                >
-                  <div className="avatar" style={{ width: 36, height: 36 }}>
-                    {m.photoURL
-                      ? <img src={m.photoURL} alt={m.displayName} />
-                      : (m.displayName?.[0] || '?').toUpperCase()
-                    }
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{m.displayName}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.email}</div>
-                  </div>
-                  {selectedMemberId === m.id && (
-                    <span style={{ marginLeft: 'auto', color: 'var(--violet-light)', fontSize: '1.2rem' }}>✓</span>
-                  )}
-                </button>
-              ))}
+              {members.map(m => {
+                const isSelected = selectedMemberIds.includes(m.id)
+                return (
+                  <label
+                    key={m.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 14px', borderRadius: 'var(--radius-md)',
+                      border: `1px solid ${isSelected ? 'var(--violet)' : 'var(--border-glass)'}`,
+                      background: isSelected ? 'var(--violet-glow)' : 'var(--bg-card)',
+                      cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleMember(m.id)}
+                      style={{
+                        width: 18, height: 18, accentColor: 'var(--violet)',
+                        cursor: 'pointer', flexShrink: 0
+                      }}
+                    />
+                    <div className="avatar" style={{ width: 36, height: 36 }}>
+                      {m.photoURL
+                        ? <img src={m.photoURL} alt={m.displayName} />
+                        : (m.displayName?.[0] || '?').toUpperCase()
+                      }
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>{m.displayName}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.email}</div>
+                    </div>
+                  </label>
+                )
+              })}
             </div>
           </div>
         )}
@@ -119,10 +149,13 @@ export default function ShareModal({ reminder, onClose, userId, userDisplayName 
             className="btn btn-primary"
             style={{ flex: 2 }}
             onClick={handleShare}
-            disabled={loading || !selectedMemberId}
+            disabled={loading || selectedMemberIds.length === 0}
           >
             {loading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : null}
-            Compartir
+            {loading
+              ? 'Compartiendo...'
+              : `Compartir con ${selectedMemberIds.length} miembro${selectedMemberIds.length !== 1 ? 's' : ''}`
+            }
           </button>
         </div>
       </div>
