@@ -11,6 +11,7 @@ import GroupsPage from './pages/GroupsPage'
 import ProfilePage from './pages/ProfilePage'
 import BottomNav from './components/layout/BottomNav'
 import ReloadPrompt from './components/shared/ReloadPrompt'
+import InstallPrompt from './components/shared/InstallPrompt'
 import ErrorBoundary from './components/shared/ErrorBoundary'
 
 // Spinner for auth loading
@@ -54,6 +55,7 @@ function AppShell() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav pendingCount={pendingCount} />
+      <InstallPrompt />
     </div>
   )
 }
