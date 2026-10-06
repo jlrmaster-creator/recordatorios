@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { COLORS, CATEGORIES, IMPORTANCE } from '../../utils/colorUtils'
+import TaskList from './TaskList'
 import { toInputDateTime } from '../../utils/dateUtils'
 import { Timestamp } from 'firebase/firestore'
 import { useAuth } from '../../context/AuthContext'
@@ -29,7 +30,9 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
         importance: initial.importance || 'medium',
         color: initial.color || '#7C3AED',
         category: initial.category || 'personal',
-        isPermanent: initial.isPermanent || false
+        isPermanent: initial.isPermanent || false,
+        tasks: initial.tasks || [],
+        tags: initial.tags || []
       })
     } else {
       // Default to 1 hour from now
@@ -73,7 +76,12 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
     }
 
     const dateObj = new Date(form.dateTime)
-    onSubmit({ ...form, dateTime: Timestamp.fromDate(dateObj) })
+    onSubmit({
+      ...form,
+      dateTime: Timestamp.fromDate(dateObj),
+      tasks,
+      tags: tags.filter(Boolean)
+    })
   }
 
   return (
@@ -128,6 +136,62 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
           onChange={e => set('dateTime', e.target.value)}
         />
         {errors.dateTime && <span className="form-error">{errors.dateTime}</span>}
+      </div>
+
+      {/* Subtareas */}
+      <div className="form-group">
+        <label className="form-label">Subtareas</label>
+        <TaskList tasks={tasks} onChange={setTasks} editable />
+      </div>
+
+      {/* Etiquetas */}
+      <div className="form-group">
+        <label className="form-label">Etiquetas</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const t = tagInput.trim()
+              if (!t) return
+              const lower = t.toLowerCase()
+              if (tags.some(x => (x || '').toLowerCase() === lower)) {
+                setTagInput('')
+                return
+              }
+              setTags([...tags, t])
+              setTagInput('')
+            }}
+            style={{ display: 'flex', gap: 8 }}
+          >
+            <input
+              className="form-input"
+              placeholder="Añadir etiqueta y pulsa Enter"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              maxLength={30}
+            />
+            <button type="submit" className="btn btn-secondary" disabled={!tagInput.trim()}>
+              Añadir
+            </button>
+          </form>
+          {tags.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {tags.map((t, i) => (
+                <span key={`${t}-${i}`} className="filter-chip" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  #{t}
+                  <button
+                    type="button"
+                    onClick={() => setTags(tags.filter((_, idx) => idx !== i))}
+                    style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                    title="Eliminar etiqueta"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Importance */}

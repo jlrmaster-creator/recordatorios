@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useReminders } from '../context/RemindersContext'
 import {
-  createReminder, updateReminder, deleteReminder
+  createReminder, updateReminder, deleteReminder, completeReminderWithRecurrence, toggleFavorite, duplicateReminder, markCompleted
 } from '../services/remindersService'
 import ReminderCard from '../components/reminders/ReminderCard'
 import ReminderForm from '../components/reminders/ReminderForm'
@@ -27,6 +27,8 @@ export default function HomePage() {
   const [filterImportance, setFilterImportance] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
   const [filterPermanent, setFilterPermanent] = useState('all')
+  const [filterFavorite, setFilterFavorite] = useState('all')
+  const [filterTag, setFilterTag] = useState('all')
 
   // Al cargar/abrir la app, descartar la notificación del badge
   useEffect(() => {
@@ -74,8 +76,11 @@ export default function HomePage() {
     const matchImp = filterImportance === 'all' || r.importance === filterImportance
     const matchCat = filterCategory === 'all' || r.category === filterCategory
     const matchPerm = filterPermanent === 'all' || r.isPermanent === true
-    return matchSearch && matchImp && matchCat && matchPerm
-  }), [reminders, search, filterImportance, filterCategory, filterPermanent])
+    const matchFav = filterFavorite === 'all' || !!r.isFavorite
+    const tagsArr = r.tags || []
+    const matchTag = filterTag === 'all' || tagsArr.some(t => (t || '').toLowerCase() === filterTag.toLowerCase())
+    return matchSearch && matchImp && matchCat && matchPerm && matchFav && matchTag
+  }), [reminders, search, filterImportance, filterCategory, filterPermanent, filterFavorite, filterTag])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
     if (a.isPermanent && !b.isPermanent) return -1

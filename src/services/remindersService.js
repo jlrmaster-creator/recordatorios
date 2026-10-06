@@ -13,6 +13,15 @@ export const createReminder = async (userId, data) => {
     isShared: false,
     sharedFrom: null,
     status: 'own',
+    isCompleted: false,
+    completedAt: null,
+    snoozeUntil: null,
+    recurrence: data.recurrence || null,
+    seriesId: data.seriesId || null,
+    tasks: data.tasks || [],
+    archived: data.archived || false,
+    isFavorite: data.isFavorite || false,
+    tags: data.tags || [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   })
@@ -88,6 +97,13 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
     sharedFromName: reminder.sharedFromName || 'Unknown',
     originalId: reminder.id,
     status: 'pending',
+    isCompleted: false,
+    completedAt: null,
+    recurrence: null,
+    tasks: reminder.tasks || [],
+    tags: reminder.tags || [],
+    isFavorite: false,
+    archived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   })
@@ -137,6 +153,51 @@ export const rejectSharedReminder = async (reminderId) => {
   if (data.sharedReminderId) {
     await updateDoc(doc(db, 'sharedReminders', data.sharedReminderId), { status: 'rejected' })
   }
+}
+
+// ── FAVORITE ──────────────────────────────────────────────
+export const toggleFavorite = async (reminderId, favorite = true) => {
+  await updateDoc(doc(db, 'reminders', reminderId), {
+    isFavorite: !!favorite,
+    updatedAt: serverTimestamp()
+  })
+}
+
+// ── SNOOZE ────────────────────────────────────────────────
+export const snoozeReminder = async (reminderId, minutes) => {
+  const m = Math.max(1, Number(minutes) || 5)
+  const until = new Date(Date.now() + m * 60000)
+  await updateDoc(doc(db, 'reminders', reminderId), {
+    snoozeUntil: until,
+    updatedAt: serverTimestamp()
+  })
+}
+
+export const clearSnooze = async (reminderId) => {
+  await updateDoc(doc(db, 'reminders', reminderId), {
+    snoozeUntil: null,
+    updatedAt: serverTimestamp()
+  })
+}
+
+// ── DUPLICATE ────────────────────────────────────────────
+export const duplicateReminder = async (userId, reminder) => {
+  const { id, createdAt, updatedAt, completedAt, sharedFrom, sharedReminderId, originalId, status, isShared, sharedFromName, ...rest } = reminder
+  await addDoc(collection(db, 'reminders'), {
+    ...rest,
+    title: `${rest.title || 'Recordatorio'} (Copia)`,
+    ownerId: userId,
+    isShared: false,
+    sharedFrom: null,
+    status: 'own',
+    isCompleted: false,
+    completedAt: null,
+    snoozeUntil: null,
+    sharedReminderId: null,
+    originalId: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  })
 }
 
 // ── GET ONE ──────────────────────────────────────────────
