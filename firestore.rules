@@ -31,7 +31,7 @@ service cloud.firestore {
     match /reminders/{reminderId} {
       allow read: if request.auth != null && (
         request.auth.uid == resource.data.ownerId ||
-        request.auth.uid in resource.data.get('sharedWith', [])
+        (resource.data.isShared == true && request.auth.uid == resource.data.sharedFrom)
       );
       allow create: if request.auth != null && (
         request.auth.uid == request.resource.data.ownerId ||
