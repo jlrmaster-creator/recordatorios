@@ -21,6 +21,20 @@ export async function requestPermission() {
   return Notification.requestPermission()
 }
 
+// ── Obtener el registro del SW de forma robusta ────────────
+// getRegistration() es inmediato si el SW ya existe (lo normal
+// al arrancar); si no, esperamos a "ready" con timeout más largo.
+async function getSWRegistration() {
+  try {
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (reg && reg.active) return reg
+  } catch (e) { /* ignorar */ }
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise(resolve => setTimeout(() => resolve(null), 3000))
+  ])
+}
+
 // ── Mostrar notificación ───────────────────────────────────
 async function showNotification(reminder, subtitle) {
   const permission = Notification.permission
@@ -49,12 +63,7 @@ async function showNotification(reminder, subtitle) {
   // Preferir ServiceWorker (siempre en móviles, es obligatorio en Chrome Android)
   try {
     if ('serviceWorker' in navigator) {
-      // Esperar al SW pero con timeout de 1 segundo para no colgarse en Dev mode
-      const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise(resolve => setTimeout(() => resolve(null), 1000))
-      ])
-      
+      const registration = await getSWRegistration()
       if (registration) {
         await registration.showNotification(title, options)
         return
@@ -64,9 +73,17 @@ async function showNotification(reminder, subtitle) {
     console.warn('SW showNotification falló:', e)
   }
 
-  // Fallback: Notification API directa (Ojo: lanza error en Android Chrome)
+  // Fallback: Notification API directa (Ojo: lanza error en Android Chrome).
+  // requireInteraction es imprescindible: sin él Chrome lo cierra solo a los ~8-20 s.
   try {
-    new Notification(title, { body: options.body, icon: options.icon, tag: options.tag })
+    new Notification(title, {
+      body: options.body,
+      icon: options.icon,
+      badge: options.badge,
+      vibrate: options.vibrate,
+      requireInteraction: true,
+      tag: options.tag
+    })
   } catch (e) {
     console.warn('Notification API directa falló (normal en móviles):', e)
   }
@@ -90,9 +107,25 @@ function getReminderTime(reminder) {
   }
 }
 
-// Set para recordar qué notificaciones ya han saltado y no repetirlas
-const notified = new Set()
+// Mapa clave -> timestamp para recordar qué notificaciones ya han
+// saltado y no repetirlas. Nunca se limpia "a ciegas": solo se
+// olvidan entradas de más de 2 horas (fuera de toda ventana útil).
+const notified = new Map()
 let isAppInitialized = false
+
+function wasNotified(key) {
+  const ts = notified.get(key)
+  if (ts === undefined) return false
+  if (Date.now() - ts > 2 * 60 * 60 * 1000) {
+    notified.delete(key)
+    return false
+  }
+  return true
+}
+
+function markNotified(key) {
+  notified.set(key, Date.now())
+}
 
 // ── Programar timers para todos los reminders ──────────────
 export function scheduleAll(reminders) {
@@ -122,13 +155,13 @@ export function scheduleAll(reminders) {
     // ── Lógica de 5 minutos antes ──
     if (fiveMinBefore > now) {
       timers.pre = setTimeout(() => {
-        notified.add(preKey)
+        markNotified(preKey)
         showNotification(reminder, '⏰ En 5 minutos')
       }, fiveMinBefore - now)
     } else if (fiveMinBefore > now - 5 * 60 * 1000 && isAppInitialized) {
       // Si venció hace poco mientras el móvil dormía
-      if (!notified.has(preKey)) {
-        notified.add(preKey)
+      if (!wasNotified(preKey)) {
+        markNotified(preKey)
         showNotification(reminder, '⏰ En 5 minutos')
       }
     }
@@ -136,13 +169,13 @@ export function scheduleAll(reminders) {
     // ── Lógica de Hora Exacta ──
     if (targetTime > now) {
       timers.exact = setTimeout(() => {
-        notified.add(exactKey)
+        markNotified(exactKey)
         showNotification(reminder, '🔔 ¡Ahora!')
       }, targetTime - now)
     } else if (targetTime > now - 15 * 60 * 1000 && isAppInitialized) {
       // Si venció hace poco mientras el móvil dormía
-      if (!notified.has(exactKey)) {
-        notified.add(exactKey)
+      if (!wasNotified(exactKey)) {
+        markNotified(exactKey)
         showNotification(reminder, '🔔 ¡Vencido recientemente!')
       }
     }
@@ -191,23 +224,17 @@ function periodicCheck() {
     const preKey = `pre-${reminder.id}`
 
     // Notificación en hora exacta
-    if (!notified.has(exactKey) && Math.abs(now - targetTime) < WINDOW) {
-      notified.add(exactKey)
+    if (!wasNotified(exactKey) && Math.abs(now - targetTime) < WINDOW) {
+      markNotified(exactKey)
       showNotification(reminder, '🔔 ¡Ahora!')
     }
 
     // Notificación 5 min antes
     const fiveMinBefore = targetTime - 5 * 60 * 1000
-    if (!notified.has(preKey) && Math.abs(now - fiveMinBefore) < WINDOW) {
-      notified.add(preKey)
+    if (!wasNotified(preKey) && Math.abs(now - fiveMinBefore) < WINDOW) {
+      markNotified(preKey)
       showNotification(reminder, '⏰ En 5 minutos')
     }
-  }
-
-  // Limpiar notificaciones muy antiguas del set (>1h) para no acumular memoria
-  // Lo hacemos cada ~100 checks
-  if (Math.random() < 0.01) {
-    notified.clear()
   }
 }
 
@@ -233,6 +260,9 @@ export function handleVisibilityChange() {
 
 // ── Inicializar todo ───────────────────────────────────────
 export function init(reminders) {
+  // Marcar inicializado ANTES de programar para que el primer
+  // scheduleAll pueda avisar de vencimientos recientes al arrancar
+  isAppInitialized = true
   scheduleAll(reminders)
   startChecker()
 
@@ -246,6 +276,9 @@ export function cleanup() {
   clearAllTimers()
   stopChecker()
   document.removeEventListener('visibilitychange', handleVisibilityChange)
-  notified.clear()
+  // No limpiamos `notified`: se borra en cada cambio de reminders y
+  // hacía que la misma notificación se re-mostrara y "reiniciara"
+  // la notificación existente en bandeja. Los entries caducan solos
+  // a las 2 h dentro de wasNotified().
   lastReminders = []
 }
