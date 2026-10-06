@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useReminders } from '../../context/RemindersContext'
 import { formatDate, formatTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
@@ -45,13 +45,31 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
 
   const handleDelete = () => setConfirmOpen(true)
 
-  const handleTasksChange = async (tasks) => {
+  // Borrador local de tareas: se guarda solo al pulsar "Guardar tareas"
+  const [tasksDraft, setTasksDraft] = useState(reminder.tasks || [])
+  const [savingTasks, setSavingTasks] = useState(false)
+
+  useEffect(() => {
+    setTasksDraft(reminder.tasks || [])
+  }, [reminder.id])
+
+  const tasksDirty = JSON.stringify(tasksDraft) !== JSON.stringify(reminder.tasks || [])
+
+  const handleTasksChange = (tasks) => setTasksDraft(tasks)
+
+  const handleSaveTasks = async () => {
     try {
-      await updateReminder(reminder.id, { tasks })
+      setSavingTasks(true)
+      await updateReminder(reminder.id, { tasks: tasksDraft })
+      toast.success('Tareas guardadas ✓')
     } catch {
       toast.error('Error al guardar tareas')
+    } finally {
+      setSavingTasks(false)
     }
   }
+
+  const handleDiscardTasks = () => setTasksDraft(reminder.tasks || [])
 
   const handleDeleteConfirm = async () => {
     if (reminder.calendarEventId) {
@@ -154,22 +172,42 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
       {!reminder.isShared && (
         <div className="card" style={{ padding: '12px 14px' }}>
           <div className="form-label" style={{ marginBottom: 10 }}>✅ Tareas y subtareas</div>
-          {reminder.tasks?.length > 0 && (
+          {tasksDraft.length > 0 && (
             <div style={{ marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 <span>Progreso</span>
-                <span>{computeProgress(reminder.tasks).done}/{computeProgress(reminder.tasks).total} · {computeProgress(reminder.tasks).pct}%</span>
+                <span>{computeProgress(tasksDraft).done}/{computeProgress(tasksDraft).total} · {computeProgress(tasksDraft).pct}%</span>
               </div>
               <div style={{ height: 6, borderRadius: 6, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${computeProgress(reminder.tasks).pct}%`, background: 'linear-gradient(90deg,var(--teal),var(--violet))', transition: 'width .25s ease' }} />
+                <div style={{ height: '100%', width: `${computeProgress(tasksDraft).pct}%`, background: 'linear-gradient(90deg,var(--teal),var(--violet))', transition: 'width .25s ease' }} />
               </div>
             </div>
           )}
           <TaskList
-            tasks={reminder.tasks || []}
-            editable={!reminder.isShared}
+            tasks={tasksDraft}
+            editable
             onChange={handleTasksChange}
           />
+          {tasksDirty && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button
+                className="btn btn-primary btn-sm"
+                style={{ flex: 2 }}
+                onClick={handleSaveTasks}
+                disabled={savingTasks}
+              >
+                {savingTasks ? 'Guardando…' : '💾 Guardar tareas'}
+              </button>
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ flex: 1 }}
+                onClick={handleDiscardTasks}
+                disabled={savingTasks}
+              >
+                Descartar
+              </button>
+            </div>
+          )}
         </div>
       )}
 
