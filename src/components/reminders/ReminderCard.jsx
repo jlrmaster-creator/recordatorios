@@ -142,7 +142,7 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
                   ★ Favorito
                 </span>
               )}
-              {hasSnooze && (
+              {hasSnooze && !reminder.isPermanent && (
                 <span className="badge" style={{ background: 'rgba(159,103,255,0.15)', color: 'var(--violet-light)' }}>
                   ⏰ Pospuesto
                 </span>
@@ -174,8 +174,8 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
               </div>
             )}
 
-            {/* Quick actions */}
-            {!reminder.isShared && (
+            {/* Quick actions (los permanentes no tienen hora, posponer no aplica) */}
+            {!reminder.isShared && !reminder.isPermanent && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }} onClick={(e) => e.stopPropagation()}>
                 {!hasSnooze ? (
                   <>
