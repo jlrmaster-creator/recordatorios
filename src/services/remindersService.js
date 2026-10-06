@@ -4,6 +4,7 @@ import {
   getDoc
 } from 'firebase/firestore'
 import { db } from './firebase'
+import { nextRecurrenceDate, isRecurrenceActive } from '../utils/recurrence'
 
 // ── CREATE ──────────────────────────────────────────────
 export const createReminder = async (userId, data) => {
@@ -75,6 +76,64 @@ export const updateReminder = async (reminderId, data) => {
   })
 }
 
+// ── COMPLETE ─────────────────────────────────────────────
+export const markCompleted = async (reminderId, completed = true) => {
+  await updateDoc(doc(db, 'reminders', reminderId), {
+    isCompleted: completed,
+    completedAt: completed ? serverTimestamp() : null,
+    updatedAt: serverTimestamp()
+  })
+}
+
+export const completeReminderWithRecurrence = async (reminderId) => {
+  const snap = await getDoc(doc(db, 'reminders', reminderId))
+  if (!snap.exists()) return
+  const r = snap.data()
+
+  await updateDoc(doc(db, 'reminders', reminderId), {
+    isCompleted: true,
+    completedAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  })
+
+  if (r.recurrence && !r.isShared) {
+    if (isRecurrenceActive(r.recurrence)) {
+      const base = r.dateTime
+      const nd = nextRecurrenceDate(base, r.recurrence)
+      if (!nd) return
+      const newSeriesId = r.seriesId || reminderId
+      let newRec = { ...r.recurrence }
+      if (typeof newRec.count === 'number' && newRec.count > 0) {
+        newRec.count = newRec.count - 1
+      }
+      await addDoc(collection(db, 'reminders'), {
+        title: r.title,
+        description: r.description,
+        dateTime: nd,
+        importance: r.importance,
+        color: r.color,
+        category: r.category,
+        isPermanent: r.isPermanent || false,
+        ownerId: r.ownerId,
+        isShared: false,
+        sharedFrom: null,
+        status: 'own',
+        isCompleted: false,
+        completedAt: null,
+        snoozeUntil: null,
+        recurrence: newRec.count === 0 ? null : newRec,
+        seriesId: newSeriesId,
+        tasks: r.tasks || [],
+        archived: false,
+        isFavorite: r.isFavorite || false,
+        tags: r.tags || [],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      })
+    }
+  }
+}
+
 // ── DELETE ───────────────────────────────────────────────
 export const deleteReminder = async (reminderId) => {
   await deleteDoc(doc(db, 'reminders', reminderId))
@@ -82,7 +141,6 @@ export const deleteReminder = async (reminderId) => {
 
 // ── SHARE ────────────────────────────────────────────────
 export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toUserName) => {
-  // Create reminder copy FIRST (sender can create via isShared+sharedFrom rule)
   const sharedRef = await addDoc(collection(db, 'reminders'), {
     title: reminder.title,
     description: reminder.description,
@@ -108,7 +166,6 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
     updatedAt: serverTimestamp()
   })
 
-  // Create share log with the known reminder ID
   const logRef = await addDoc(collection(db, 'sharedReminders'), {
     reminderId: sharedRef.id,
     originalReminderId: reminder.id,
@@ -117,10 +174,11 @@ export const shareReminder = async (reminder, fromUserId, toUserId, groupId, toU
     toUserName: toUserName || 'Usuario',
     groupId,
     status: 'pending',
+    revoked: false,
+    readAt: null,
     createdAt: serverTimestamp()
   })
 
-  // Update the reminder with the log ID (allowed via isShared+sharedFrom rule)
   await updateDoc(doc(db, 'reminders', sharedRef.id), {
     sharedReminderId: logRef.id
   })
