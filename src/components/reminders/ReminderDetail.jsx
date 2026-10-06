@@ -2,13 +2,15 @@ import { useMemo, useState } from 'react'
 import { useReminders } from '../../context/RemindersContext'
 import { formatDate, formatTime, isOverdue } from '../../utils/dateUtils'
 import { getCategoryById, getImportanceById, importanceBadgeClass } from '../../utils/colorUtils'
-import { EditIcon, DeleteIcon, ShareIcon, CalIcon } from '../shared/Icons'
+import { EditIcon, DeleteIcon, ShareIcon, CalIcon, CopyIcon } from '../shared/Icons'
 import { createCalendarEvent, deleteCalendarEvent, getAccessToken, getConnectionStatus, initGoogleApis } from '../../services/calendarService'
 import { updateReminder } from '../../services/remindersService'
 import Modal from '../shared/Modal'
+import TaskList from './TaskList'
+import { computeProgress } from '../../utils/tasksUtils'
 import toast from 'react-hot-toast'
 
-export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, onClose }) {
+export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, onDuplicate, onClose }) {
   const { sentShares } = useReminders()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const shares = useMemo(() =>
@@ -42,6 +44,14 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
   }
 
   const handleDelete = () => setConfirmOpen(true)
+
+  const handleTasksChange = async (tasks) => {
+    try {
+      await updateReminder(reminder.id, { tasks })
+    } catch {
+      toast.error('Error al guardar tareas')
+    }
+  }
 
   const handleDeleteConfirm = async () => {
     if (reminder.calendarEventId) {
@@ -140,6 +150,29 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
         </div>
       )}
 
+      {/* Tareas / subtareas */}
+      {!reminder.isShared && (
+        <div className="card" style={{ padding: '12px 14px' }}>
+          <div className="form-label" style={{ marginBottom: 10 }}>✅ Tareas y subtareas</div>
+          {reminder.tasks?.length > 0 && (
+            <div style={{ marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <span>Progreso</span>
+                <span>{computeProgress(reminder.tasks).done}/{computeProgress(reminder.tasks).total} · {computeProgress(reminder.tasks).pct}%</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 6, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${computeProgress(reminder.tasks).pct}%`, background: 'linear-gradient(90deg,var(--teal),var(--violet))', transition: 'width .25s ease' }} />
+              </div>
+            </div>
+          )}
+          <TaskList
+            tasks={reminder.tasks || []}
+            editable={!reminder.isShared}
+            onChange={handleTasksChange}
+          />
+        </div>
+      )}
+
       {/* Actions */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -157,6 +190,11 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
             </button>
           )}
         </div>
+        {onDuplicate && (
+          <button className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={onDuplicate}>
+            <CopyIcon /> Duplicar
+          </button>
+        )}
         <button className="btn btn-danger btn-sm" style={{ flex: 1 }} onClick={handleDelete}>
           <DeleteIcon /> Eliminar
         </button>

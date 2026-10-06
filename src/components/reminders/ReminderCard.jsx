@@ -45,11 +45,6 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
     } catch { toast.error('Error') }
   }
 
-  const handleDuplicate = (e) => {
-    e.stopPropagation()
-    if (onDuplicate) onDuplicate(reminder)
-  }
-
   return (
     <>
       <div
@@ -192,9 +187,6 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
                 ) : (
                   <button className="btn btn-ghost btn-sm" onClick={handleClearSnooze}>Quitar pospuesto</button>
                 )}
-                {onDuplicate && (
-                  <button className="btn btn-ghost btn-sm" onClick={handleDuplicate}>Duplicar</button>
-                )}
               </div>
             )}
           </div>
@@ -207,6 +199,7 @@ export default function ReminderCard({ reminder, onEdit, onDelete, onShare, show
           onEdit={() => { setDetailOpen(false); onEdit(reminder) }}
           onDelete={() => { setDetailOpen(false); onDelete(reminder.id) }}
           onShare={showShareBtn ? () => { setDetailOpen(false); onShare(reminder) } : null}
+          onDuplicate={onDuplicate ? () => { setDetailOpen(false); onDuplicate(reminder) } : null}
           onClose={() => setDetailOpen(false)}
         />
       </Modal>

@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   bump-version:
     if: github.actor != 'github-actions'
@@ -31,7 +34,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           VERSION=$(node -p "require('./package.json').version")
           git add package.json
-          git commit -m "chore: bump version to v${VERSION} [skip ci]" || echo "No changes to commit"
-          git push origin main || echo "Nothing to push"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: bump version to v${VERSION}"
+            git pull --rebase origin main
+            git push origin main
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

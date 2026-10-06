@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useReminders } from '../context/RemindersContext'
 import {
-  createReminder, updateReminder, deleteReminder, completeReminderWithRecurrence, toggleFavorite, duplicateReminder, markCompleted
+  createReminder, updateReminder, deleteReminder, completeReminderWithRecurrence, toggleFavorite, markCompleted
 } from '../services/remindersService'
 import ReminderCard from '../components/reminders/ReminderCard'
 import ReminderForm from '../components/reminders/ReminderForm'
@@ -22,6 +22,7 @@ export default function HomePage() {
   const [shareTarget, setShareTarget] = useState(null)
   const [voiceModalOpen, setVoiceModalOpen] = useState(false)
   const [voicePrefill, setVoicePrefill] = useState(null)
+  const [duplicateTarget, setDuplicateTarget] = useState(null)
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filterImportance, setFilterImportance] = useState('all')
@@ -44,6 +45,7 @@ export default function HomePage() {
       toast.success('Recordatorio creado ✓')
       setFormOpen(false)
       setVoicePrefill(null)
+      setDuplicateTarget(null)
     } catch { toast.error('Error al crear') } finally { setLoading(false) }
   }
 
@@ -90,11 +92,17 @@ export default function HomePage() {
     } catch { toast.error('Error al actualizar favorito') }
   }
 
-  const handleDuplicate = async (reminder) => {
-    try {
-      await duplicateReminder(user.uid, reminder)
-      toast.success('Recordatorio duplicado')
-    } catch { toast.error('Error al duplicar') }
+  const handleDuplicate = (reminder) => {
+    // Abrir el formulario en modo edición con los datos copiados;
+    // nada se crea hasta que el usuario guarda
+    setDuplicateTarget({
+      ...reminder,
+      title: `${reminder.title} (Copia)`,
+      tasks: (reminder.tasks || []).map(t => ({ ...t, done: false }))
+    })
+    setEditTarget(null)
+    setVoicePrefill(null)
+    setFormOpen(true)
   }
 
   const filtered = useMemo(() => reminders.filter(r => {
@@ -126,7 +134,7 @@ export default function HomePage() {
         title="Mis Recordatorios"
         right={
           <div style={{ display: 'flex', gap: 4 }}>
-            <button className="header-action" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}>
+            <button className="header-action" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null); setDuplicateTarget(null) }}>
               <PlusIcon />
             </button>
             <button className="header-action" onClick={() => setVoiceModalOpen(true)} title="Crear por voz">
@@ -251,7 +259,7 @@ export default function HomePage() {
             <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v3M8 22h8"/>
           </svg>
         </button>
-        <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null) }}
+        <button className="fab" onClick={() => { setEditTarget(null); setFormOpen(true); setVoicePrefill(null); setDuplicateTarget(null) }}
           style={{ position: 'static' }}
         >
           <PlusIcon />
@@ -261,13 +269,14 @@ export default function HomePage() {
       {/* Create/Edit Modal */}
       <Modal
         open={formOpen || !!editTarget}
-        onClose={() => { setFormOpen(false); setEditTarget(null); setVoicePrefill(null) }}
-        title={editTarget ? 'Editar recordatorio' : 'Nuevo recordatorio'}
+        onClose={() => { setFormOpen(false); setEditTarget(null); setVoicePrefill(null); setDuplicateTarget(null) }}
+        title={editTarget ? 'Editar recordatorio' : duplicateTarget ? 'Duplicar recordatorio' : 'Nuevo recordatorio'}
       >
         <ReminderForm
-          initial={editTarget || voicePrefill}
+          key={editTarget?.id || duplicateTarget?.id || 'new'}
+          initial={editTarget || duplicateTarget || voicePrefill}
           onSubmit={editTarget ? handleEdit : handleCreate}
-          onCancel={() => { setFormOpen(false); setEditTarget(null); setVoicePrefill(null) }}
+          onCancel={() => { setFormOpen(false); setEditTarget(null); setVoicePrefill(null); setDuplicateTarget(null) }}
           loading={loading}
         />
       </Modal>
