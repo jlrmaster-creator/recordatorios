@@ -40,7 +40,7 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.ownerId ||
         (resource.data.isShared == true && request.auth.uid == resource.data.sharedFrom)
-      );
+      ) && request.resource.data.ownerId == resource.data.ownerId;
       allow delete: if request.auth != null && (
         request.auth.uid == resource.data.ownerId ||
         (resource.data.isShared == true && request.auth.uid == resource.data.sharedFrom)

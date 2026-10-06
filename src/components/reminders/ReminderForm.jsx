@@ -20,6 +20,9 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
   const { user } = useAuth()
   const [form, setForm] = useState(defaultForm)
   const [errors, setErrors] = useState({})
+  const [tasks, setTasks] = useState(initial?.tasks || [])
+  const [tags, setTags] = useState(initial?.tags || [])
+  const [tagInput, setTagInput] = useState('')
 
   useEffect(() => {
     if (initial) {
@@ -30,10 +33,11 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
         importance: initial.importance || 'medium',
         color: initial.color || '#7C3AED',
         category: initial.category || 'personal',
-        isPermanent: initial.isPermanent || false,
-        tasks: initial.tasks || [],
-        tags: initial.tags || []
+        isPermanent: initial.isPermanent || false
       })
+      setTasks(initial.tasks || [])
+      setTags(initial.tags || [])
+      setTagInput('')
     } else {
       // Default to 1 hour from now
       const d = new Date()
@@ -52,7 +56,7 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
   const validate = () => {
     const err = {}
     if (!form.title.trim()) err.title = 'El título es obligatorio'
-    if (!form.dateTime) err.dateTime = 'La fecha es obligatoria'
+    if (!form.isPermanent && !form.dateTime) err.dateTime = 'La fecha es obligatoria'
     return err
   }
 
@@ -75,13 +79,23 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
       }
     }
 
-    const dateObj = new Date(form.dateTime)
-    onSubmit({
+    const payload = {
       ...form,
-      dateTime: Timestamp.fromDate(dateObj),
+      isPermanent: form.isPermanent,
       tasks,
       tags: tags.filter(Boolean)
-    })
+    }
+    if (!form.isPermanent && form.dateTime) {
+      const dateObj = new Date(form.dateTime)
+      if (!isNaN(dateObj.getTime())) {
+        payload.dateTime = Timestamp.fromDate(dateObj)
+      } else {
+        payload.dateTime = null
+      }
+    } else {
+      payload.dateTime = null
+    }
+    onSubmit(payload)
   }
 
   return (

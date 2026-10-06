@@ -106,6 +106,10 @@ export function scheduleAll(reminders) {
     const targetTime = getReminderTime(reminder)
     if (!targetTime) continue
 
+    // Si está pospuesto (snooze) y aún no ha vencido, no notificar
+    const snoozeTs = reminder.snoozeUntil ? new Date(reminder.snoozeUntil).getTime() : 0
+    if (snoozeTs && snoozeTs > now) continue
+
     const exactKey = `exact-${reminder.id}`
     const preKey = `pre-${reminder.id}`
 
@@ -178,6 +182,10 @@ function periodicCheck() {
   for (const reminder of lastReminders) {
     const targetTime = getReminderTime(reminder)
     if (!targetTime) continue
+
+    // Si está pospuesto (snooze) y aún no ha vencido, no notificar
+    const snoozeTs = reminder.snoozeUntil ? new Date(reminder.snoozeUntil).getTime() : 0
+    if (snoozeTs && snoozeTs > now) continue
 
     const exactKey = `exact-${reminder.id}`
     const preKey = `pre-${reminder.id}`

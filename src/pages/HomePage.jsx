@@ -71,6 +71,32 @@ export default function HomePage() {
     }
   }
 
+  const handleToggleComplete = async (id, completed) => {
+    try {
+      if (completed) {
+        await completeReminderWithRecurrence(id)
+        toast.success('Marcado como completado ✓')
+      } else {
+        await markCompleted(id, false)
+        toast.success('Marcado como pendiente')
+      }
+    } catch { toast.error('Error al actualizar') }
+  }
+
+  const handleToggleFavorite = async (id, fav) => {
+    try {
+      await toggleFavorite(id, fav)
+      toast.success(fav ? 'Añadido a favoritos ★' : 'Quitado de favoritos')
+    } catch { toast.error('Error al actualizar favorito') }
+  }
+
+  const handleDuplicate = async (reminder) => {
+    try {
+      await duplicateReminder(user.uid, reminder)
+      toast.success('Recordatorio duplicado')
+    } catch { toast.error('Error al duplicar') }
+  }
+
   const filtered = useMemo(() => reminders.filter(r => {
     const matchSearch = !search || r.title.toLowerCase().includes(search.toLowerCase()) || (r.description || '').toLowerCase().includes(search.toLowerCase())
     const matchImp = filterImportance === 'all' || r.importance === filterImportance
@@ -83,6 +109,7 @@ export default function HomePage() {
   }), [reminders, search, filterImportance, filterCategory, filterPermanent, filterFavorite, filterTag])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
+    if (!!b.isFavorite !== !!a.isFavorite) return !!b.isFavorite - !!a.isFavorite
     if (a.isPermanent && !b.isPermanent) return -1
     if (!a.isPermanent && b.isPermanent) return 1
     const ta = a.dateTime?.toDate?.() || new Date(a.dateTime || 0)
@@ -138,6 +165,9 @@ export default function HomePage() {
               <button className={`filter-chip${filterPermanent === 'permanent' ? ' active' : ''}`} onClick={() => setFilterPermanent(filterPermanent === 'permanent' ? 'all' : 'permanent')}>
                 ♾️ Permanentes
               </button>
+              <button className={`filter-chip${filterFavorite === 'fav' ? ' active' : ''}`} onClick={() => setFilterFavorite(filterFavorite === 'fav' ? 'all' : 'fav')}>
+                ★ Favoritos
+              </button>
             </div>
             <div className="filter-bar">
               <button className={`filter-chip${filterCategory === 'all' ? ' active' : ''}`} onClick={() => setFilterCategory('all')}>Todas</button>
@@ -163,6 +193,9 @@ export default function HomePage() {
                     onShare={setShareTarget}
                     showShareBtn
                     sentShares={sentShares.filter(s => s.originalReminderId === r.id)}
+                    onToggleComplete={handleToggleComplete}
+                    onToggleFavorite={handleToggleFavorite}
+                    onDuplicate={handleDuplicate}
                   />
                 ))}
               </div>
