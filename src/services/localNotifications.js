@@ -39,7 +39,9 @@ async function getSWRegistration() {
 async function showNotification(reminder, subtitle) {
   const permission = Notification.permission
 
-  const title = `${subtitle} — ${reminder.title || 'Recordatorio'}`
+  // El título del recordatorio primero para identificarlo de un vistazo;
+  // el tipo de aviso (5 min / ahora) va después.
+  const title = `${reminder.title || 'Recordatorio'} — ${subtitle}`
   const body = reminder.description || reminder.title || ''
   
   // Siempre mostrar un toast in-app como fallback/complemento visual

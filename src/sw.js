@@ -17,18 +17,35 @@ registerRoute(
 self.addEventListener('message', (e) => {
   if (e.data && 'SKIP_WAITING' === e.data.type) self.skipWaiting()
 
-  // Badge en Android mediante notificación silenciosa
+  // Badge en Android mediante notificación: ahora con el título y un
+  // extracto de la descripción de cada recordatorio permanente.
   if (e.data && e.data.type === 'SET_PERMANENT_BADGE') {
     const count = e.data.count || 0
+    const items = Array.isArray(e.data.items) ? e.data.items : []
     if (count > 0) {
+      const MAX_ITEMS = 5
+      const shown = items.slice(0, MAX_ITEMS)
+      const lines = shown.map(it => (
+        `• ${it.title}${it.description ? ` — ${it.description}` : ''}`
+      ))
+      const rest = count - shown.length
+      if (rest > 0) lines.push(`… y ${rest} más`)
+
+      const title = count === 1
+        ? `📌 ${shown[0]?.title || '1 recordatorio permanente'}`
+        : `📌 ${count} recordatorios permanentes`
+      const body = count === 1
+        ? (shown[0]?.description || 'Recordatorio permanente — ábrelo para ver los detalles')
+        : lines.join('\n')
+
       e.waitUntil(
-        self.registration.showNotification('Recordatorios', {
-          body: count === 1 ? '1 recordatorio permanente' : `${count} recordatorios permanentes`,
-          tag: 'permanent-badge',
-          silent: true,
-          requireInteraction: false,
+        self.registration.showNotification(title, {
+          body,
           icon: '/recordatorios/icon-192x192.png',
           badge: '/recordatorios/icon-192x192.png',
+          tag: 'permanent-badge',
+          silent: true,
+          requireInteraction: true,
           data: { clickAction: '/recordatorios/' }
         })
       )

@@ -35,11 +35,20 @@ export const RemindersProvider = ({ children }) => {
     }
   }, [user, reminders])
 
-  // Badge en el icono vía notificación silenciosa (Android)
+  // Badge en el icono vía notificación (Android): enviamos también el
+  // título y un extracto de la descripción de cada recordatorio
+  // permanente para que la notificación sea informativa al expandirla.
   useEffect(() => {
-    const count = reminders.filter(r => r.isPermanent).length
+    const permanents = reminders.filter(r => r.isPermanent)
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({ type: 'SET_PERMANENT_BADGE', count })
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SET_PERMANENT_BADGE',
+        count: permanents.length,
+        items: permanents.slice(0, 8).map(r => ({
+          title: String(r.title || 'Recordatorio').slice(0, 60),
+          description: String(r.description || '').replace(/\s+/g, ' ').slice(0, 80)
+        }))
+      })
     }
   }, [reminders])
 
