@@ -108,10 +108,13 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
           placeholder="¿Qué necesitas recordar?"
           value={form.title}
           onChange={e => set('title', e.target.value)}
-          maxLength={80}
+          maxLength={150}
           autoFocus
         />
         {errors.title && <span className="form-error">{errors.title}</span>}
+        <div style={{ textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+          {form.title.length} / 150
+        </div>
       </div>
 
       {/* Description */}
@@ -122,9 +125,13 @@ export default function ReminderForm({ initial, onSubmit, onCancel, loading }) {
           placeholder="Detalles opcionales..."
           value={form.description}
           onChange={e => set('description', e.target.value)}
-          maxLength={300}
-          rows={3}
+          maxLength={2000}
+          rows={6}
+          style={{ resize: 'vertical' }}
         />
+        <div style={{ textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+          {form.description.length} / 2000
+        </div>
       </div>
 
       {/* Permanent */}

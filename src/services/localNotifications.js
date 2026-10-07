@@ -42,7 +42,9 @@ async function showNotification(reminder, subtitle) {
   // El título del recordatorio primero para identificarlo de un vistazo;
   // el tipo de aviso (5 min / ahora) va después.
   const title = `${reminder.title || 'Recordatorio'} — ${subtitle}`
-  const body = reminder.description || reminder.title || ''
+  const fullBody = reminder.description || reminder.title || ''
+  // La notificación muestra "algo" de la descripción, no toda (si es larga)
+  const body = fullBody.length > 200 ? `${fullBody.slice(0, 200).trimEnd()}…` : fullBody
   
   // Siempre mostrar un toast in-app como fallback/complemento visual
   toast(`${title}\n${body}`, {

@@ -38,7 +38,8 @@ for (const doc of snap.docs) {
 
   try {
     const title = `⏰ Recordatorio: ${reminder.title || 'Pendiente'}`
-    const body = reminder.description || 'Está por vencer'
+    const desc = reminder.description || 'Está por vencer'
+    const body = desc.length > 200 ? `${desc.slice(0, 200).trimEnd()}…` : desc
     
     await admin.messaging().send({
       token,

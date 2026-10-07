@@ -111,7 +111,7 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
       {/* Description */}
       {reminder.description && (
         <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', padding: '12px 14px' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9375rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
             {reminder.description}
           </p>
         </div>
