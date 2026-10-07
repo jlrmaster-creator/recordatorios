@@ -27,9 +27,9 @@ export default function HomePage() {
   const [search, setSearch] = useState('')
   const [filterImportance, setFilterImportance] = useState('all')
   const [filterCategory, setFilterCategory] = useState('all')
-  const [filterPermanent, setFilterPermanent] = useState('all')
   const [filterFavorite, setFilterFavorite] = useState('all')
   const [filterTag, setFilterTag] = useState('all')
+  const [mainTab, setMainTab] = useState('notes') // 'notes' | 'permanent'
 
   // Al cargar/abrir la app, descartar la notificación del badge
   useEffect(() => {
@@ -109,12 +109,11 @@ export default function HomePage() {
     const matchSearch = !search || r.title.toLowerCase().includes(search.toLowerCase()) || (r.description || '').toLowerCase().includes(search.toLowerCase())
     const matchImp = filterImportance === 'all' || r.importance === filterImportance
     const matchCat = filterCategory === 'all' || r.category === filterCategory
-    const matchPerm = filterPermanent === 'all' || r.isPermanent === true
     const matchFav = filterFavorite === 'all' || !!r.isFavorite
     const tagsArr = r.tags || []
     const matchTag = filterTag === 'all' || tagsArr.some(t => (t || '').toLowerCase() === filterTag.toLowerCase())
-    return matchSearch && matchImp && matchCat && matchPerm && matchFav && matchTag
-  }), [reminders, search, filterImportance, filterCategory, filterPermanent, filterFavorite, filterTag])
+    return matchSearch && matchImp && matchCat && matchFav && matchTag
+  }), [reminders, search, filterImportance, filterCategory, filterFavorite, filterTag])
 
   const sorted = useMemo(() => [...filtered].sort((a, b) => {
     if (!!b.isFavorite !== !!a.isFavorite) return !!b.isFavorite - !!a.isFavorite
@@ -125,8 +124,10 @@ export default function HomePage() {
     return ta - tb
   }), [filtered])
 
-  const ownReminders = useMemo(() => sorted.filter(r => !r.isShared), [sorted])
+  const ownNotes = useMemo(() => sorted.filter(r => !r.isShared && !r.isPermanent), [sorted])
+  const ownPermanent = useMemo(() => sorted.filter(r => !r.isShared && !!r.isPermanent), [sorted])
   const sharedAccepted = useMemo(() => sorted.filter(r => r.isShared && r.status === 'accepted'), [sorted])
+  const activeList = mainTab === 'permanent' ? ownPermanent : ownNotes
 
   return (
     <>
@@ -170,9 +171,6 @@ export default function HomePage() {
                   {i.emoji} {i.label}
                 </button>
               ))}
-              <button className={`filter-chip${filterPermanent === 'permanent' ? ' active' : ''}`} onClick={() => setFilterPermanent(filterPermanent === 'permanent' ? 'all' : 'permanent')}>
-                ♾️ Permanentes
-              </button>
               <button className={`filter-chip${filterFavorite === 'fav' ? ' active' : ''}`} onClick={() => setFilterFavorite(filterFavorite === 'fav' ? 'all' : 'fav')}>
                 ★ Favoritos
               </button>
@@ -187,26 +185,63 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Own reminders */}
-          {ownReminders.length > 0 && (
+          {/* Own reminders — con pestañas: los permanentes no molestan a los demás */}
+          {sorted.length > 0 && (
             <div>
-              <div className="section-header"><span className="section-title">📌 Mis notas</span></div>
-              <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {ownReminders.map(r => (
-                  <ReminderCard
-                    key={r.id}
-                    reminder={r}
-                    onEdit={setEditTarget}
-                    onDelete={handleDelete}
-                    onShare={setShareTarget}
-                    showShareBtn
-                    sentShares={sentShares.filter(s => s.originalReminderId === r.id)}
-                    onToggleComplete={handleToggleComplete}
-                    onToggleFavorite={handleToggleFavorite}
-                    onDuplicate={handleDuplicate}
-                  />
-                ))}
+              <div className="section-header" style={{ flexWrap: 'wrap', gap: 8 }}>
+                <span className="section-title">📌 Mis notas</span>
+                <div className="tabs" role="tablist" aria-label="Tipo de recordatorio">
+                  <button
+                    role="tab"
+                    aria-selected={mainTab === 'notes'}
+                    className={`tab-btn${mainTab === 'notes' ? ' active' : ''}`}
+                    onClick={() => setMainTab('notes')}
+                  >
+                    📋 Recordatorios
+                    {ownNotes.length > 0 && <span className="tab-count">{ownNotes.length}</span>}
+                  </button>
+                  <button
+                    role="tab"
+                    aria-selected={mainTab === 'permanent'}
+                    className={`tab-btn${mainTab === 'permanent' ? ' active' : ''}`}
+                    onClick={() => setMainTab('permanent')}
+                  >
+                    ♾️ Permanentes
+                    {ownPermanent.length > 0 && <span className="tab-count">{ownPermanent.length}</span>}
+                  </button>
+                </div>
               </div>
+
+              {activeList.length > 0 ? (
+                <div className="stagger" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {activeList.map(r => (
+                    <ReminderCard
+                      key={r.id}
+                      reminder={r}
+                      onEdit={setEditTarget}
+                      onDelete={handleDelete}
+                      onShare={setShareTarget}
+                      showShareBtn
+                      sentShares={sentShares.filter(s => s.originalReminderId === r.id)}
+                      onToggleComplete={handleToggleComplete}
+                      onToggleFavorite={handleToggleFavorite}
+                      onDuplicate={handleDuplicate}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  textAlign: 'center', padding: '24px 16px', borderRadius: 'var(--radius-md)',
+                  background: 'var(--bg-card)', border: '1px dashed var(--border-glass)',
+                  color: 'var(--text-muted)', fontSize: '0.875rem'
+                }}>
+                  {search || filterImportance !== 'all' || filterCategory !== 'all' || filterFavorite !== 'all' || filterTag !== 'all'
+                    ? 'Sin resultados con los filtros actuales'
+                    : mainTab === 'permanent'
+                      ? '♾️ Sin recordatorios permanentes todavía'
+                      : '📋 Sin recordatorios por aquí — toca + para crear uno'}
+                </div>
+              )}
             </div>
           )}
 
