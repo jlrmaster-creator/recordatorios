@@ -146,7 +146,9 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
         <div className="card" style={{ padding: '12px 14px', marginTop: '-8px' }}>
           <div className="form-label" style={{ marginBottom: 10 }}>Historial de envíos</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {shares.map(s => (
+            {shares.map(s => {
+              const removed = (s.deletedBy || []).includes(s.toUserId) && s.status !== 'rejected'
+              return (
               <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.875rem' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>{s.toUserName || 'Usuario'}</span>
                 <span style={{ 
@@ -154,16 +156,20 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
                   fontSize: '0.8rem',
                   padding: '2px 8px',
                   borderRadius: '12px',
-                  background: s.status === 'accepted' ? 'rgba(6,214,160,0.1)' : 
+                  background: removed ? 'rgba(255,255,255,0.05)' :
+                              s.status === 'accepted' ? 'rgba(6,214,160,0.1)' : 
                               s.status === 'rejected' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.05)',
-                  color: s.status === 'accepted' ? 'var(--teal)' : 
+                  color: removed ? 'var(--text-muted)' :
+                         s.status === 'accepted' ? 'var(--teal)' : 
                          s.status === 'rejected' ? 'var(--red)' : 'var(--text-muted)' 
                 }}>
-                  {s.status === 'accepted' ? '✓ Aceptado' : 
+                  {removed ? '🗑 Eliminado' :
+                   s.status === 'accepted' ? '✓ Aceptado' : 
                    s.status === 'rejected' ? '✗ Rechazado' : '⏳ Pendiente'}
                 </span>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -239,9 +245,16 @@ export default function ReminderDetail({ reminder, onEdit, onDelete, onShare, on
       </div>
 
       <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} title="Eliminar recordatorio">
-        <p style={{ marginBottom: 20, color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
+        <p style={{ marginBottom: reminder.isShared || shares.length > 0 ? 10 : 20, color: 'var(--text-secondary)', fontSize: '0.9375rem' }}>
           ¿Estás seguro de que quieres eliminar "<strong>{reminder.title}</strong>"?
         </p>
+        {(reminder.isShared || shares.length > 0) && (
+          <p style={{ marginBottom: 20, color: 'var(--text-muted)', fontSize: '0.8125rem', lineHeight: 1.5 }}>
+            {reminder.isShared
+              ? '🗑 Se eliminará de tu lista. Los datos se borrarán de Firebase cuando todos los usuarios del grupo lo hayan eliminado.'
+              : '🗑 Se eliminará de tu lista y los datos se borrarán de Firebase cuando todos los destinatarios lo hayan eliminado.'}
+          </p>
+        )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setConfirmOpen(false)}>
             Cancelar

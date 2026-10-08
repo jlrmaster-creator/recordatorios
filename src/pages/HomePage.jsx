@@ -60,8 +60,8 @@ export default function HomePage() {
 
   const handleDelete = async (id) => {
     try {
-      await deleteReminder(id)
-      toast.success('Eliminado')
+      const res = await deleteReminder(id)
+      toast.success(res?.shared ? 'Eliminado de tu lista ✓' : 'Eliminado')
     } catch { toast.error('Error al eliminar') }
   }
 

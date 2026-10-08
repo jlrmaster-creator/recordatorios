@@ -1,6 +1,9 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { useAuth } from './AuthContext'
-import { subscribeToMyReminders, subscribeToMySentShares } from '../services/remindersService'
+import {
+  subscribeToMyReminders, subscribeToMySentShares,
+  purgeCompletedShares, cleanupOrphanShares
+} from '../services/remindersService'
 import * as localNotif from '../services/localNotifications'
 
 const RemindersContext = createContext(null)
@@ -16,6 +19,14 @@ export const RemindersProvider = ({ children }) => {
     const unsub1 = subscribeToMyReminders(user.uid, setReminders)
     const unsub2 = subscribeToMySentShares(user.uid, setSentShares)
     return () => { unsub1(); unsub2() }
+  }, [user])
+
+  // Al iniciar sesión: purgar compartidos que ya eliminaron todos los
+  // participantes y limpiar restos huérfanos de versiones anteriores
+  useEffect(() => {
+    if (!user) return
+    purgeCompletedShares().catch(() => {})
+    cleanupOrphanShares().catch(() => {})
   }, [user])
 
   // Programar notificaciones locales cada vez que cambian los reminders

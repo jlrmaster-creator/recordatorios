@@ -25,6 +25,10 @@ for (const doc of snap.docs) {
   const uid = reminder.ownerId
   if (!uid) continue
 
+  // Recordatorio eliminado por su dueño (aún en Firebase esperando a
+  // que todos lo eliminen): no notificar
+  if ((reminder.deletedBy || []).includes(uid)) continue
+
   if (reminder.lastNotifiedAt) {
     const diff = now.seconds - (reminder.lastNotifiedAt.seconds || 0)
     if (diff < 3600) continue
